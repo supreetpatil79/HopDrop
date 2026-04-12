@@ -13,6 +13,37 @@ interface TokenPayload {
   roles: string[];
 }
 
+export type DemoPersona = 'carrier' | 'sender_priya' | 'sender_rahul';
+
+const demoProfiles: Record<
+  DemoPersona,
+  {
+    name: string;
+    email: string;
+    phone: string;
+    role: string[];
+  }
+> = {
+  carrier: {
+    name: 'Arjun Rao',
+    email: 'arjun@hopdrop.demo',
+    phone: '9876500011',
+    role: ['carrier', 'sender']
+  },
+  sender_priya: {
+    name: 'Priya Nair',
+    email: 'priya@hopdrop.demo',
+    phone: '9876500022',
+    role: ['sender']
+  },
+  sender_rahul: {
+    name: 'Rahul Mehta',
+    email: 'rahul@hopdrop.demo',
+    phone: '9876500033',
+    role: ['sender']
+  }
+};
+
 function sanitizeUser(user: any) {
   return {
     _id: user._id,
@@ -75,6 +106,45 @@ async function issueTokens(userId: Types.ObjectId | string) {
   return { accessToken, refreshToken, user: sanitizeUser(user) };
 }
 
+async function ensureDemoUser(persona: DemoPersona) {
+  const profile = demoProfiles[persona];
+  let user = await User.findOne({ phone: profile.phone });
+
+  if (!user) {
+    user = await User.create({
+      name: profile.name,
+      email: profile.email,
+      phone: profile.phone,
+      phoneVerified: true,
+      emailVerified: true,
+      role: profile.role
+    });
+    return user;
+  }
+
+  let shouldSave = false;
+  if (!user.isActive) {
+    user.isActive = true;
+    shouldSave = true;
+  }
+  if (!user.phoneVerified) {
+    user.phoneVerified = true;
+    shouldSave = true;
+  }
+
+  const mergedRoles = Array.from(new Set([...(user.role || []), ...profile.role]));
+  if (mergedRoles.length !== user.role.length) {
+    user.role = mergedRoles as Array<'sender' | 'carrier' | 'admin'>;
+    shouldSave = true;
+  }
+
+  if (shouldSave) {
+    await user.save();
+  }
+
+  return user;
+}
+
 export async function sendOtp(phone: string) {
   const otp = await generateOTP(otpKeys.phone(phone));
   await sendSmsOTP(phone, otp);
@@ -88,6 +158,15 @@ export async function verifyOtpLogin(phone: string, otp: string) {
     throw new ApiError(404, 'User not found. Please register.');
   }
 
+  return issueTokens(user._id);
+}
+
+export async function demoLogin(persona: DemoPersona = 'sender_priya') {
+  if (!env.DEMO_MODE) {
+    throw new ApiError(403, 'Demo mode is disabled');
+  }
+
+  const user = await ensureDemoUser(persona);
   return issueTokens(user._id);
 }
 

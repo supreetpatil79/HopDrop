@@ -1,0 +1,113 @@
+groups:
+  - name: hopdrop-core-api
+    rules:
+      - alert: HopDropCoreApiDown
+        expr: up{job="core-api"} == 0
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: HopDrop core API is down
+          description: The core API metrics endpoint has been unreachable for at least 2 minutes.
+
+      - alert: HopDropCoreApiHigh5xxRate
+        expr: sum(rate(hopdrop_core_api_http_requests_total{status_code=~"5.."}[5m])) / clamp_min(sum(rate(hopdrop_core_api_http_requests_total[5m])), 1) > 0.05
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: HopDrop core API 5xx rate is elevated
+          description: More than 5% of core API traffic has been returning 5xx responses for the last 10 minutes.
+
+      - alert: HopDropOutboxPublishFailures
+        expr: increase(hopdrop_core_api_outbox_events_failed_total[10m]) > 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: HopDrop outbox publish failures detected
+          description: The core API outbox relay has recorded Kafka publish failures in the last 10 minutes.
+
+  - name: hopdrop-routing-search
+    rules:
+      - alert: HopDropRoutingSearchDown
+        expr: up{job="routing-search"} == 0
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: HopDrop routing-search is down
+          description: The routing-search metrics endpoint has been unreachable for at least 2 minutes.
+
+      - alert: HopDropRoutingSearchHighLatency
+        expr: histogram_quantile(0.95, sum by (le) (rate(hopdrop_routing_search_http_request_duration_seconds_bucket[5m]))) > 0.75
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: HopDrop routing-search p95 latency is elevated
+          description: The routing-search service has sustained p95 latency above 750ms for the last 10 minutes.
+
+      - alert: HopDropRoutingSearchHigh5xxRate
+        expr: sum(rate(hopdrop_routing_search_http_requests_total{status_code=~"5.."}[5m])) / clamp_min(sum(rate(hopdrop_routing_search_http_requests_total[5m])), 1) > 0.05
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: HopDrop routing-search 5xx rate is elevated
+          description: More than 5% of routing-search traffic has been returning 5xx responses for the last 10 minutes.
+
+  - name: hopdrop-realtime-gateway
+    rules:
+      - alert: HopDropRealtimeGatewayDown
+        expr: up{job="realtime-gateway"} == 0
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: HopDrop realtime gateway is down
+          description: The realtime gateway metrics endpoint has been unreachable for at least 2 minutes.
+
+  - name: hopdrop-search-indexer
+    rules:
+      - alert: HopDropSearchIndexerDown
+        expr: up{job="search-indexer"} == 0
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: HopDrop search indexer is down
+          description: The search indexer metrics endpoint has been unreachable for at least 2 minutes.
+
+  - name: hopdrop-matching-orchestrator
+    rules:
+      - alert: HopDropMatchingOrchestratorDown
+        expr: up{job="matching-orchestrator"} == 0
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: HopDrop matching orchestrator is down
+          description: The matching orchestrator metrics endpoint has been unreachable for at least 2 minutes.
+
+  - name: hopdrop-notification-consumer
+    rules:
+      - alert: HopDropNotificationConsumerDown
+        expr: up{job="notification-consumer"} == 0
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: HopDrop notification consumer is down
+          description: The notification consumer metrics endpoint has been unreachable for at least 2 minutes.
+
+  - name: hopdrop-analytics-pipeline
+    rules:
+      - alert: HopDropAnalyticsPipelineDown
+        expr: up{job="analytics-pipeline"} == 0
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: HopDrop analytics pipeline is down
+          description: The analytics pipeline metrics endpoint has been unreachable for at least 2 minutes.

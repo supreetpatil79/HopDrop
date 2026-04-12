@@ -1,3 +1,4 @@
+import { DOMAIN_TOPICS, getMatchStatusEventType } from '../events/domainEvents';
 import { env } from '../config/env';
 import { payoutQueue } from '../config/redis';
 import { DeliveryRequest } from '../models/DeliveryRequest';
@@ -10,7 +11,96 @@ import { ApiError } from '../utils/ApiError';
 import { holdFunds } from './escrow.service';
 import { emitToMatch, emitToUser, notifyUser } from './notification.service';
 import { generateOTP, otpKeys, verifyOTP } from './otp.service';
+import { appendOutboxEvents } from './outbox.service';
 import { bookRapido } from './rapido.service';
+
+function mapMatchStatusToDeliveryStatus(
+  status: string
+): 'pending' | 'matched' | 'pickup_otp_sent' | 'picked_up' | 'in_transit' | 'delivery_otp_sent' | 'delivered' | 'cancelled' | 'expired' {
+  const mapping: Record<string, 'pending' | 'matched' | 'pickup_otp_sent' | 'picked_up' | 'in_transit' | 'delivery_otp_sent' | 'delivered' | 'cancelled' | 'expired'> = {
+    proposed: 'matched',
+    carrier_accepted: 'matched',
+    sender_confirmed: 'matched',
+    active: 'matched',
+    pickup_pending: 'pickup_otp_sent',
+    picked_up: 'picked_up',
+    in_transit: 'in_transit',
+    delivery_pending: 'delivery_otp_sent',
+    delivered: 'delivered',
+    cancelled: 'cancelled'
+  };
+
+  return mapping[status] || 'pending';
+}
+
+async function updateMatchStatus(matchId: string, newStatus: string, actorId: string, metadata?: Record<string, unknown>) {
+  const current = await Match.findById(matchId);
+  if (!current) {
+    throw new ApiError(404, 'Match not found');
+  }
+
+  const timelineEventMap: Record<string, string> = {
+    proposed: 'match_proposed',
+    carrier_accepted: 'carrier_accepted',
+    sender_confirmed: 'sender_confirmed',
+    active: 'payment_done',
+    pickup_pending: 'pickup_otp_generated',
+    picked_up: 'pickup_verified',
+    in_transit: 'pickup_verified',
+    delivery_pending: 'delivery_otp_generated',
+    delivered: 'delivery_verified',
+    cancelled: 'cancelled',
+    disputed: 'disputed'
+  };
+  const timelineEvent = timelineEventMap[newStatus] || 'match_proposed';
+
+  const previousStatus = current.status;
+  current.status = newStatus as any;
+  current.timeline.push({
+    event: timelineEvent as any,
+    timestamp: new Date(),
+    actor: actorId as any,
+    metadata: {
+      ...(metadata || {}),
+      status: newStatus
+    }
+  });
+  await current.save();
+
+  const deliveryStatus = mapMatchStatusToDeliveryStatus(newStatus);
+  await DeliveryRequest.findByIdAndUpdate(current.deliveryRequest, { $set: { status: deliveryStatus } });
+
+  const payload = { matchId, status: newStatus, at: new Date() };
+  await emitToUser(current.carrier, 'match:status_changed', payload);
+  await emitToUser(current.sender, 'match:status_changed', payload);
+  await emitToMatch(matchId, 'match:status_changed', payload);
+
+  await appendOutboxEvents([
+    {
+      topic: DOMAIN_TOPICS.match,
+      eventType: getMatchStatusEventType(newStatus),
+      aggregateType: 'match',
+      aggregateId: matchId,
+      partitionKey: matchId,
+      payload: {
+        matchId,
+        tripId: current.trip.toString(),
+        deliveryRequestId: current.deliveryRequest.toString(),
+        carrierId: current.carrier.toString(),
+        senderId: current.sender.toString(),
+        previousStatus,
+        status: newStatus,
+        actorId,
+        metadata: metadata || {}
+      }
+    }
+  ]);
+
+  return {
+    match: current,
+    before: previousStatus
+  };
+}
 
 async function ensureInvolved(matchId: string, userId: string) {
   const match = await Match.findById(matchId)
@@ -51,9 +141,7 @@ export async function carrierAccept(matchId: string, userId: string) {
     throw new ApiError(400, 'Match already processed');
   }
 
-  match.status = 'carrier_accepted';
-  match.timeline.push({ event: 'carrier_accepted', actor: match.carrier, timestamp: new Date() });
-  await match.save();
+  const { match: updated } = await updateMatchStatus(matchId, 'carrier_accepted', match.carrier.toString());
 
   await notifyUser({
     userId: match.sender,
@@ -65,7 +153,7 @@ export async function carrierAccept(matchId: string, userId: string) {
 
   await emitToUser(match.sender, 'match:carrier_accepted', { matchId });
   await emitToMatch(matchId, 'match:carrier_accepted', { matchId });
-  return match;
+  return updated;
 }
 
 export async function carrierReject(matchId: string, userId: string) {
@@ -78,11 +166,11 @@ export async function carrierReject(matchId: string, userId: string) {
     throw new ApiError(403, 'Forbidden');
   }
 
-  match.status = 'cancelled';
-  match.timeline.push({ event: 'cancelled', actor: match.carrier, timestamp: new Date(), metadata: { reason: 'carrier_rejected' } });
-  await match.save();
+  const { match: updated } = await updateMatchStatus(matchId, 'cancelled', match.carrier.toString(), {
+    reason: 'carrier_rejected'
+  });
 
-  return match;
+  return updated;
 }
 
 export async function senderConfirm(matchId: string, userId: string) {
@@ -104,16 +192,17 @@ export async function senderConfirm(matchId: string, userId: string) {
     throw new ApiError(404, 'Delivery request missing');
   }
 
-  match.status = request.paymentStatus === 'paid' ? 'active' : 'sender_confirmed';
-  match.timeline.push({ event: 'sender_confirmed', actor: match.sender, timestamp: new Date() });
+  const nextStatus = request.paymentStatus === 'paid' ? 'active' : 'sender_confirmed';
+  const { match: updated } = await updateMatchStatus(matchId, nextStatus, match.sender.toString());
+  updated.timeline.push({ event: 'sender_confirmed', actor: match.sender, timestamp: new Date() });
   if (request.paymentStatus === 'paid') {
-    match.timeline.push({ event: 'payment_done', actor: match.sender, timestamp: new Date() });
+    updated.timeline.push({ event: 'payment_done', actor: match.sender, timestamp: new Date() });
     const existingHold = await Transaction.exists({ match: match._id, type: 'escrow_hold' });
     if (!existingHold) {
       await holdFunds(match._id.toString(), request.totalCharge || match.agreedPrice, 'sender_payment');
     }
   }
-  await match.save();
+  await updated.save();
 
   request.match = match._id;
   await request.save();
@@ -136,7 +225,7 @@ export async function senderConfirm(matchId: string, userId: string) {
   });
 
   return {
-    match,
+    match: updated,
     paymentRequired: request.paymentStatus !== 'paid'
   };
 }
@@ -151,11 +240,11 @@ export async function senderReject(matchId: string, userId: string) {
     throw new ApiError(403, 'Forbidden');
   }
 
-  match.status = 'cancelled';
-  match.timeline.push({ event: 'cancelled', actor: match.sender, timestamp: new Date(), metadata: { reason: 'sender_rejected' } });
-  await match.save();
+  const { match: updated } = await updateMatchStatus(matchId, 'cancelled', match.sender.toString(), {
+    reason: 'sender_rejected'
+  });
 
-  return match;
+  return updated;
 }
 
 export async function generatePickupOtp(matchId: string, userId: string) {
@@ -179,10 +268,10 @@ export async function generatePickupOtp(matchId: string, userId: string) {
 
   const otp = await generateOTP(otpKeys.pickup(matchId));
 
-  match.status = 'pickup_pending';
-  match.otp.pickup.generatedAt = new Date();
-  match.timeline.push({ event: 'pickup_otp_generated', actor: match.carrier, timestamp: new Date() });
-  await match.save();
+  const { match: updated } = await updateMatchStatus(matchId, 'pickup_pending', match.carrier.toString());
+  updated.otp.pickup.generatedAt = new Date();
+  updated.timeline.push({ event: 'pickup_otp_generated', actor: match.carrier, timestamp: new Date() });
+  await updated.save();
 
   request.status = 'pickup_otp_sent';
   await request.save();
@@ -213,13 +302,14 @@ export async function verifyPickupOtpForMatch(matchId: string, userId: string, o
 
   await verifyOTP(otpKeys.pickup(matchId), otp);
 
-  match.status = 'picked_up';
-  match.otp.pickup.verifiedAt = new Date();
-  match.timeline.push({ event: 'pickup_verified', actor: match.sender, timestamp: new Date() });
-  await match.save();
+  const { match: updated } = await updateMatchStatus(matchId, 'picked_up', match.sender.toString());
+  updated.otp.pickup.verifiedAt = new Date();
+  updated.timeline.push({ event: 'pickup_verified', actor: match.sender, timestamp: new Date() });
+  await updated.save();
 
   await DeliveryRequest.findByIdAndUpdate(match.deliveryRequest, { $set: { status: 'picked_up' } });
   await Trip.findByIdAndUpdate(match.trip, { $set: { status: 'in_transit' } });
+  await updateMatchStatus(matchId, 'in_transit', match.carrier.toString());
   await emitToUser(match.sender, 'trip:status_changed', { tripId: match.trip.toString(), status: 'in_transit' });
   await emitToUser(match.carrier, 'trip:status_changed', { tripId: match.trip.toString(), status: 'in_transit' });
 
@@ -234,7 +324,7 @@ export async function verifyPickupOtpForMatch(matchId: string, userId: string, o
   await emitToUser(match.sender, 'otp:pickup_verified', { matchId });
   await emitToUser(match.carrier, 'otp:pickup_verified', { matchId });
   await emitToMatch(matchId, 'otp:pickup_verified', { matchId });
-  return match;
+  return updated;
 }
 
 export async function generateDeliveryOtp(matchId: string, userId: string) {
@@ -253,10 +343,10 @@ export async function generateDeliveryOtp(matchId: string, userId: string) {
 
   const otp = await generateOTP(otpKeys.delivery(matchId));
 
-  match.status = 'delivery_pending';
-  match.otp.delivery.generatedAt = new Date();
-  match.timeline.push({ event: 'delivery_otp_generated', actor: match.carrier, timestamp: new Date() });
-  await match.save();
+  const { match: updated } = await updateMatchStatus(matchId, 'delivery_pending', match.carrier.toString());
+  updated.otp.delivery.generatedAt = new Date();
+  updated.timeline.push({ event: 'delivery_otp_generated', actor: match.carrier, timestamp: new Date() });
+  await updated.save();
 
   await DeliveryRequest.findByIdAndUpdate(match.deliveryRequest, { $set: { status: 'delivery_otp_sent' } });
 
@@ -277,11 +367,11 @@ export async function verifyDeliveryOtpForMatch(matchId: string, userId: string,
 
   await verifyOTP(otpKeys.delivery(matchId), otp);
 
-  match.status = 'delivered';
-  match.otp.delivery.verifiedAt = new Date();
-  match.timeline.push({ event: 'delivery_verified', actor: match.sender, timestamp: new Date() });
-  match.timeline.push({ event: 'completed', actor: match.carrier, timestamp: new Date() });
-  await match.save();
+  const { match: updated } = await updateMatchStatus(matchId, 'delivered', userId);
+  updated.otp.delivery.verifiedAt = new Date();
+  updated.timeline.push({ event: 'delivery_verified', actor: match.sender, timestamp: new Date() });
+  updated.timeline.push({ event: 'completed', actor: match.carrier, timestamp: new Date() });
+  await updated.save();
 
   await DeliveryRequest.findByIdAndUpdate(match.deliveryRequest, {
     $set: { status: 'delivered' }
@@ -311,7 +401,7 @@ export async function verifyDeliveryOtpForMatch(matchId: string, userId: string,
   await emitToUser(match.sender, 'otp:delivery_verified', { matchId });
   await emitToUser(match.carrier, 'otp:delivery_verified', { matchId });
   await emitToMatch(matchId, 'otp:delivery_verified', { matchId });
-  return match;
+  return updated;
 }
 
 export async function rateMatch(matchId: string, userId: string, input: { score: number; comment?: string }) {
@@ -381,15 +471,7 @@ export async function disputeMatch(matchId: string, userId: string, input: { rea
   const senderId = (match.sender as any)._id?.toString?.() || (match.sender as any).toString();
   const actorId = userId === carrierId ? carrierId : senderId;
 
-  (match as any).status = 'disputed';
-  (match as any).timeline.push({
-    event: 'disputed',
-    timestamp: new Date(),
-    actor: actorId,
-    metadata: input
-  });
-
-  await (match as any).save();
+  const { match: updated } = await updateMatchStatus(matchId, 'disputed', actorId, input as any);
 
   await emitToMatch(matchId, 'notification:new', {
     type: 'dispute',
@@ -397,7 +479,7 @@ export async function disputeMatch(matchId: string, userId: string, input: { rea
     reason: input.reason
   });
 
-  return match;
+  return updated;
 }
 
 export async function requestRapidoForMatch(matchId: string, userId: string, input: { pickupCoords: [number, number]; dropAddress: string }) {

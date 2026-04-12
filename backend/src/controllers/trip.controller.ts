@@ -3,6 +3,7 @@ import {
   cancelTrip,
   confirmDeposit,
   createDepositOrder,
+  createPreTripDepositOrder,
   createTrip,
   getTripById,
   listMyTrips,
@@ -41,6 +42,11 @@ export async function deleteTripController(req: Request, res: Response) {
 export async function payDepositController(req: Request, res: Response) {
   const data = await createDepositOrder(req.user!.id, req.params.tripId);
   res.status(200).json(new ApiResponse('Deposit order created', data));
+}
+
+export async function preTripDepositOrderController(req: Request, res: Response) {
+  const data = await createPreTripDepositOrder(req.user!.id);
+  res.status(200).json(new ApiResponse('Pre-trip deposit order created', data));
 }
 
 export async function confirmDepositController(req: Request, res: Response) {

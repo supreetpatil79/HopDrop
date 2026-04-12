@@ -62,8 +62,18 @@ async function seed() {
 
   const trip = await Trip.create({
     carrier: arjun._id,
-    origin: { city: 'Bengaluru', state: 'Karnataka', fullAddress: 'Bengaluru City Railway Station' },
-    destination: { city: 'Mumbai', state: 'Maharashtra', fullAddress: 'Mumbai Central' },
+    origin: {
+      city: 'Bengaluru',
+      state: 'Karnataka',
+      coordinates: { type: 'Point', coordinates: [77.5946, 12.9716] },
+      fullAddress: 'Bengaluru City Railway Station'
+    },
+    destination: {
+      city: 'Mumbai',
+      state: 'Maharashtra',
+      coordinates: { type: 'Point', coordinates: [72.8777, 19.076] },
+      fullAddress: 'Mumbai Central'
+    },
     departureTime: departure,
     estimatedArrivalTime: eta,
     modeOfTransport: 'train',
@@ -92,8 +102,18 @@ async function seed() {
   const [priyaReq, rahulReq] = await DeliveryRequest.create([
     {
       sender: priya._id,
-      origin: { city: 'Bengaluru', state: 'Karnataka', fullAddress: 'Indiranagar' },
-      destination: { city: 'Mumbai', state: 'Maharashtra', fullAddress: 'Andheri' },
+      origin: {
+        city: 'Bengaluru',
+        state: 'Karnataka',
+        coordinates: { type: 'Point', coordinates: [77.6408, 12.9784] },
+        fullAddress: 'Indiranagar'
+      },
+      destination: {
+        city: 'Mumbai',
+        state: 'Maharashtra',
+        coordinates: { type: 'Point', coordinates: [72.8464, 19.1136] },
+        fullAddress: 'Andheri'
+      },
       package: {
         description: 'Legal document envelope',
         category: 'documents',
@@ -120,8 +140,18 @@ async function seed() {
     },
     {
       sender: rahul._id,
-      origin: { city: 'Bengaluru', state: 'Karnataka', fullAddress: 'HSR Layout' },
-      destination: { city: 'Mumbai', state: 'Maharashtra', fullAddress: 'Powai' },
+      origin: {
+        city: 'Bengaluru',
+        state: 'Karnataka',
+        coordinates: { type: 'Point', coordinates: [77.6387, 12.9116] },
+        fullAddress: 'HSR Layout'
+      },
+      destination: {
+        city: 'Mumbai',
+        state: 'Maharashtra',
+        coordinates: { type: 'Point', coordinates: [72.906, 19.1197] },
+        fullAddress: 'Powai'
+      },
       package: {
         description: 'Prescription medicines',
         category: 'medicine',

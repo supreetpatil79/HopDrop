@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import Razorpay from 'razorpay';
 import { env } from '../config/env';
+import { DELIVERY_EVENT_TYPES, DOMAIN_TOPICS, TRIP_EVENT_TYPES } from '../events/domainEvents';
 import { DeliveryRequest } from '../models/DeliveryRequest';
 import { Transaction } from '../models/Transaction';
 import { Trip } from '../models/Trip';
@@ -8,6 +9,7 @@ import { User } from '../models/User';
 import { ApiError } from '../utils/ApiError';
 import { holdFunds } from './escrow.service';
 import { emitToUser, notifyUser } from './notification.service';
+import { appendOutboxEvents } from './outbox.service';
 
 const razorpay = new Razorpay({
   key_id: env.RAZORPAY_KEY_ID,
@@ -38,6 +40,15 @@ async function createOrder(amount: number, receipt: string, notes: Record<string
       status: 'created'
     };
   }
+}
+
+export async function createStandaloneOrder(input: { amount: number; receipt: string; notes?: Record<string, string> }) {
+  const order = await createOrder(input.amount, input.receipt, input.notes || {});
+  return {
+    orderId: order.id,
+    amount: order.amount,
+    currency: order.currency || 'INR'
+  };
 }
 
 export async function createTripDepositOrder(tripId: string, userId: string) {
@@ -149,6 +160,26 @@ export async function confirmTripDeposit(input: {
   trip.safetyDepositPaid = true;
   trip.safetyDepositTransactionId = razorpayPaymentId;
   await trip.save();
+
+  await appendOutboxEvents([
+    {
+      topic: DOMAIN_TOPICS.trip,
+      eventType: TRIP_EVENT_TYPES.updated,
+      aggregateType: 'trip',
+      aggregateId: tripId,
+      partitionKey: tripId,
+      payload: {
+        tripId,
+        carrierId: userId,
+        status: trip.status,
+        safetyDepositPaid: trip.safetyDepositPaid,
+        safetyDepositTransactionId: trip.safetyDepositTransactionId,
+        updates: {
+          safetyDepositPaid: true
+        }
+      }
+    }
+  ]);
 
   await notifyUser({
     userId,
@@ -263,6 +294,24 @@ export async function confirmDeliveryPayment(input: {
     type: 'payment'
   });
   await emitToUser(userId, 'payment:status', { status: 'success', type: 'delivery_payment', requestId });
+
+  await appendOutboxEvents([
+    {
+      topic: DOMAIN_TOPICS.payment,
+      eventType: DELIVERY_EVENT_TYPES.paid,
+      aggregateType: 'delivery_request',
+      aggregateId: requestId,
+      partitionKey: requestId,
+      payload: {
+        requestId,
+        userId,
+        paymentStatus: request.paymentStatus,
+        totalCharge: request.totalCharge || tx.amount,
+        razorpayOrderId,
+        razorpayPaymentId
+      }
+    }
+  ]);
 
   return { success: true };
 }

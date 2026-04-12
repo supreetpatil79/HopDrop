@@ -1,5 +1,17 @@
 import { z } from 'zod';
 
+const optionalCoercedNumber = (label: string) =>
+  z
+    .union([
+      z.literal(''),
+      z.coerce.number({
+        invalid_type_error: `${label} must be a valid number`
+      })
+    ])
+    .transform((value) => (value === '' ? undefined : value));
+
+const optionalUrl = z.preprocess((value) => (value === '' ? undefined : value), z.string().url().optional());
+
 const locationSchema = z.object({
   city: z.string().min(2, 'City is required'),
   state: z.string().optional(),
@@ -49,15 +61,19 @@ export const deliveryFormSchema = z.object({
   package: z.object({
     description: z.string().min(3),
     category: z.enum(['documents', 'clothing', 'electronics', 'food', 'fragile', 'medicine', 'other']),
-    weightKg: z.coerce.number().min(0.1),
+    weightKg: z.coerce
+      .number({
+        invalid_type_error: 'Weight must be a valid number'
+      })
+      .min(0.1, 'Weight must be valid'),
     dimensionsCm: z.object({
       length: z.coerce.number().optional(),
       width: z.coerce.number().optional(),
       height: z.coerce.number().optional()
     }),
     isFragile: z.boolean().default(false),
-    declaredValue: z.coerce.number().optional(),
-    photoUrl: z.string().url().optional().or(z.literal(''))
+    declaredValue: optionalCoercedNumber('Declared value').optional(),
+    photoUrl: optionalUrl
   }),
   recipient: z.object({
     name: z.string().min(2),

@@ -48,32 +48,32 @@ export interface IDeliveryRequest {
 export type DeliveryRequestDocument = HydratedDocument<IDeliveryRequest>;
 export type DeliveryRequestModel = Model<IDeliveryRequest>;
 
+const pointSchema = new Schema(
+  {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point'
+    },
+    coordinates: { type: [Number], default: undefined }
+  },
+  { _id: false }
+);
+
 const DeliveryRequestSchema = new Schema<IDeliveryRequest>(
   {
     sender: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     origin: {
       city: String,
       state: String,
-      coordinates: {
-        type: {
-          type: String,
-          enum: ['Point']
-        },
-        coordinates: [Number]
-      },
+      coordinates: { type: pointSchema, default: undefined },
       placeId: String,
       fullAddress: String
     },
     destination: {
       city: String,
       state: String,
-      coordinates: {
-        type: {
-          type: String,
-          enum: ['Point']
-        },
-        coordinates: [Number]
-      },
+      coordinates: { type: pointSchema, default: undefined },
       placeId: String,
       fullAddress: String
     },

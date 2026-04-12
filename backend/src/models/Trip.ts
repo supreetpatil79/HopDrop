@@ -52,18 +52,23 @@ export interface ITrip {
 export type TripDocument = HydratedDocument<ITrip>;
 export type TripModel = Model<ITrip>;
 
+const pointSchema = new Schema(
+  {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point'
+    },
+    coordinates: { type: [Number], default: undefined }
+  },
+  { _id: false }
+);
+
 const locationSchema = new Schema<ILocation>(
   {
     city: { type: String, required: true },
     state: { type: String },
-    coordinates: {
-      type: {
-        type: String,
-        enum: ['Point'],
-        default: 'Point'
-      },
-      coordinates: { type: [Number] }
-    },
+    coordinates: { type: pointSchema, default: undefined },
     placeId: { type: String },
     fullAddress: { type: String }
   },
@@ -77,13 +82,7 @@ const TripSchema = new Schema<ITrip>(
     destination: {
       city: String,
       state: String,
-      coordinates: {
-        type: {
-          type: String,
-          enum: ['Point']
-        },
-        coordinates: [Number]
-      },
+      coordinates: { type: pointSchema, default: undefined },
       placeId: String,
       fullAddress: String
     },

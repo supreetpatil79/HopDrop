@@ -1,11 +1,32 @@
+import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { PackageCheck, Truck, Wallet } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { authApi } from '../../api/auth.api';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../hooks/useAuth';
 
+type DemoPersona = 'carrier' | 'sender_priya' | 'sender_rahul';
+
 export function Navbar() {
   const navigate = useNavigate();
-  const { isAuthenticated, user, clearAuth } = useAuth();
+  const { isAuthenticated, user, clearAuth, setAuth } = useAuth();
+  const demoMode = (import.meta.env.VITE_DEMO_MODE ?? 'true').toLowerCase() !== 'false';
+  const [switchingPersona, setSwitchingPersona] = useState<DemoPersona | null>(null);
+
+  async function switchDemoPersona(persona: DemoPersona) {
+    setSwitchingPersona(persona);
+    try {
+      const response = await authApi.demoLogin({ persona });
+      setAuth(response.data.data);
+      toast.success(`Switched to ${persona === 'carrier' ? 'carrier' : 'sender'} view`);
+      navigate('/dashboard');
+    } catch (_error) {
+      toast.error('Unable to switch demo persona right now');
+    } finally {
+      setSwitchingPersona(null);
+    }
+  }
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-white/90 backdrop-blur">
@@ -30,6 +51,16 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           {isAuthenticated ? (
             <>
+              {demoMode ? (
+                <>
+                  <Button variant="ghost" onClick={() => switchDemoPersona('sender_priya')} disabled={Boolean(switchingPersona)}>
+                    Sender View
+                  </Button>
+                  <Button variant="ghost" onClick={() => switchDemoPersona('carrier')} disabled={Boolean(switchingPersona)}>
+                    Carrier View
+                  </Button>
+                </>
+              ) : null}
               <Button variant="ghost" onClick={() => navigate('/dashboard')}>
                 <Truck className="mr-1 h-4 w-4" />
                 Dashboard
@@ -54,12 +85,18 @@ export function Navbar() {
             </>
           ) : (
             <>
-              <Button variant="ghost" onClick={() => navigate('/auth/login')}>
-                Login
-              </Button>
-              <Button variant="primary" onClick={() => navigate('/auth/register')}>
-                Register
-              </Button>
+              {demoMode ? (
+                <span className="text-sm font-medium text-primary">Demo mode active</span>
+              ) : (
+                <>
+                  <Button variant="ghost" onClick={() => navigate('/auth/login')}>
+                    Login
+                  </Button>
+                  <Button variant="primary" onClick={() => navigate('/auth/register')}>
+                    Register
+                  </Button>
+                </>
+              )}
             </>
           )}
         </div>

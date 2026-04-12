@@ -1,4 +1,4 @@
-import { InputHTMLAttributes } from 'react';
+import { forwardRef, InputHTMLAttributes } from 'react';
 import clsx from 'clsx';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -6,7 +6,12 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
 }
 
-export function Input({ label, error, className, ...props }: InputProps) {
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(allProps, ref) {
+  const { label, error, className, value, ...props } = allProps;
+  const hasValueProp = Object.prototype.hasOwnProperty.call(allProps, 'value');
+  const normalizedValue =
+    value === undefined || value === null || (typeof value === 'number' && Number.isNaN(value)) ? '' : value;
+
   return (
     <label className="flex w-full flex-col gap-1">
       {label ? <span className="text-sm font-medium text-text">{label}</span> : null}
@@ -17,8 +22,10 @@ export function Input({ label, error, className, ...props }: InputProps) {
           className
         )}
         {...props}
+        {...(hasValueProp ? { value: normalizedValue } : {})}
+        ref={ref}
       />
       {error ? <span className="text-xs text-red-600">{error}</span> : null}
     </label>
   );
-}
+});

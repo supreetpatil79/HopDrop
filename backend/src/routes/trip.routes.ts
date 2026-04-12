@@ -7,6 +7,7 @@ import {
   listTripsController,
   myTripsController,
   payDepositController,
+  preTripDepositOrderController,
   updateTripController
 } from '../controllers/trip.controller';
 import { requireAuth, requireRole } from '../middleware/auth.middleware';
@@ -25,6 +26,7 @@ router.get('/my', requireAuth, asyncHandler(myTripsController));
 router.get('/:tripId', requireAuth, asyncHandler(getTripController));
 router.put('/:tripId', requireAuth, requireRole('carrier'), validate(updateTripSchema), asyncHandler(updateTripController));
 router.delete('/:tripId', requireAuth, requireRole('carrier'), asyncHandler(deleteTripController));
+router.post('/deposit-order', requireAuth, requireRole('carrier'), asyncHandler(preTripDepositOrderController));
 router.post('/:tripId/pay-deposit', requireAuth, requireRole('carrier'), asyncHandler(payDepositController));
 router.post('/:tripId/confirm-deposit', requireAuth, requireRole('carrier'), asyncHandler(confirmDepositController));
 

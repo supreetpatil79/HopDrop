@@ -1,3 +1,5 @@
+import mongoose from 'mongoose';
+import { DOMAIN_TOPICS, TRIP_EVENT_TYPES } from '../events/domainEvents';
 import { endOfDay, startOfDay } from '../utils/time';
 import { reminderQueue } from '../config/redis';
 import { Match } from '../models/Match';
@@ -5,8 +7,11 @@ import { Transaction } from '../models/Transaction';
 import { Trip } from '../models/Trip';
 import { User } from '../models/User';
 import { ApiError } from '../utils/ApiError';
+import { isTransactionUnsupported } from '../utils/mongoTransactions';
+import { env } from '../config/env';
 import { matchTripAgainstPendingRequests } from './matching.service';
-import { confirmTripDeposit, createTripDepositOrder } from './payment.service';
+import { appendOutboxEvents } from './outbox.service';
+import { confirmTripDeposit, createStandaloneOrder, createTripDepositOrder } from './payment.service';
 
 const BLOCKING_MATCH_STATUSES = [
   'carrier_accepted',
@@ -20,17 +25,70 @@ const BLOCKING_MATCH_STATUSES = [
 ];
 
 export async function createTrip(userId: string, payload: any) {
-  const trip = await Trip.create({
-    ...payload,
-    carrier: userId,
-    status: 'active',
-    safetyDepositPaid: false
-  });
+  async function persistTrip(session?: mongoose.ClientSession) {
+    const trip = new Trip({
+      ...payload,
+      carrier: userId,
+      status: 'active',
+      safetyDepositPaid: false
+    });
 
-  await User.findByIdAndUpdate(userId, {
-    $addToSet: { role: 'carrier' },
-    $inc: { totalTripsAsCarrier: 1 }
-  });
+    await trip.save(session ? { session } : undefined);
+
+    await User.findByIdAndUpdate(
+      userId,
+      {
+        $addToSet: { role: 'carrier' },
+        $inc: { totalTripsAsCarrier: 1 }
+      },
+      session ? { session } : undefined
+    );
+
+    await appendOutboxEvents(
+      [
+        {
+          topic: DOMAIN_TOPICS.trip,
+          eventType: TRIP_EVENT_TYPES.posted,
+          aggregateType: 'trip',
+          aggregateId: trip._id.toString(),
+          partitionKey: trip._id.toString(),
+          payload: {
+            tripId: trip._id.toString(),
+            carrierId: userId,
+            origin: trip.origin,
+            destination: trip.destination,
+            departureTime: trip.departureTime,
+            pricePerKg: trip.pricePerKg,
+            availableCapacity: trip.availableCapacity,
+            status: trip.status,
+            safetyDepositPaid: trip.safetyDepositPaid
+          }
+        }
+      ],
+      session
+    );
+
+    return trip;
+  }
+
+  let trip;
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    trip = await persistTrip(session);
+    await session.commitTransaction();
+  } catch (error) {
+    await session.abortTransaction();
+
+    if (isTransactionUnsupported(error)) {
+      trip = await persistTrip();
+    } else {
+      throw error;
+    }
+  } finally {
+    session.endSession();
+  }
 
   const departureMs = new Date(trip.departureTime).getTime();
   const now = Date.now();
@@ -140,6 +198,28 @@ export async function updateTrip(userId: string, tripId: string, payload: Record
   Object.assign(trip, payload);
   await trip.save();
 
+  await appendOutboxEvents([
+    {
+      topic: DOMAIN_TOPICS.trip,
+      eventType: TRIP_EVENT_TYPES.updated,
+      aggregateType: 'trip',
+      aggregateId: trip._id.toString(),
+      partitionKey: trip._id.toString(),
+      payload: {
+        tripId: trip._id.toString(),
+        carrierId: trip.carrier.toString(),
+        origin: trip.origin,
+        destination: trip.destination,
+        departureTime: trip.departureTime,
+        pricePerKg: trip.pricePerKg,
+        availableCapacity: trip.availableCapacity,
+        status: trip.status,
+        safetyDepositPaid: trip.safetyDepositPaid,
+        updates: payload
+      }
+    }
+  ]);
+
   return trip;
 }
 
@@ -177,11 +257,62 @@ export async function cancelTrip(userId: string, tripId: string) {
     });
   }
 
+  await appendOutboxEvents([
+    {
+      topic: DOMAIN_TOPICS.trip,
+      eventType: TRIP_EVENT_TYPES.cancelled,
+      aggregateType: 'trip',
+      aggregateId: trip._id.toString(),
+      partitionKey: trip._id.toString(),
+      payload: {
+        tripId: trip._id.toString(),
+        carrierId: trip.carrier.toString(),
+        status: trip.status
+      }
+    }
+  ]);
+
   return trip;
 }
 
 export async function createDepositOrder(userId: string, tripId: string) {
   return createTripDepositOrder(tripId, userId);
+}
+
+export async function createPreTripDepositOrder(userId: string) {
+  const existing = await Transaction.findOne({
+    user: userId,
+    type: 'safety_deposit',
+    status: { $in: ['initiated', 'pending'] },
+    description: 'draft_trip_deposit'
+  }).sort({ createdAt: -1 });
+
+  if (existing?.razorpayOrderId) {
+    return {
+      orderId: existing.razorpayOrderId,
+      amount: existing.amount,
+      currency: existing.currency
+    };
+  }
+
+  const amount = env.DEFAULT_SAFETY_DEPOSIT_PAISE;
+  const order = await createStandaloneOrder({
+    amount,
+    receipt: `draft_trip_dep_${userId}_${Date.now()}`,
+    notes: { type: 'safety_deposit', stage: 'pre_trip' }
+  });
+
+  await Transaction.create({
+    user: userId,
+    type: 'safety_deposit',
+    amount,
+    currency: order.currency,
+    razorpayOrderId: order.orderId,
+    status: 'initiated',
+    description: 'draft_trip_deposit'
+  });
+
+  return order;
 }
 
 export async function confirmDeposit(

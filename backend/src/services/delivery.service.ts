@@ -1,41 +1,97 @@
+import mongoose from 'mongoose';
+import { DELIVERY_EVENT_TYPES, DOMAIN_TOPICS } from '../events/domainEvents';
 import { DeliveryRequest } from '../models/DeliveryRequest';
 import { Match } from '../models/Match';
 import { Trip } from '../models/Trip';
 import { User } from '../models/User';
 import { ApiError } from '../utils/ApiError';
+import { isTransactionUnsupported } from '../utils/mongoTransactions';
 import { calculateQuote } from '../utils/pricing';
-import { queueMatching } from './matching.service';
+import { appendOutboxEvents } from './outbox.service';
 import { confirmDeliveryPayment, createDeliveryOrder } from './payment.service';
 
 export async function createDeliveryRequest(userId: string, payload: any) {
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  async function persistDeliveryRequest(session?: mongoose.ClientSession) {
+    const draft = new DeliveryRequest({
+      ...payload,
+      sender: userId,
+      status: 'pending',
+      paymentStatus: 'unpaid',
+      expiresAt
+    });
 
-  const draft = await DeliveryRequest.create({
-    ...payload,
-    sender: userId,
-    status: 'pending',
-    paymentStatus: 'unpaid',
-    expiresAt
-  });
+    await draft.save(session ? { session } : undefined);
 
-  const candidateTrip = await Trip.findOne({
-    'origin.city': { $regex: new RegExp(payload.origin.city, 'i') },
-    'destination.city': { $regex: new RegExp(payload.destination.city, 'i') },
-    status: 'active',
-    safetyDepositPaid: true,
-    'availableCapacity.weightKg': { $gte: payload.package.weightKg },
-    'availableCapacity.allowedCategories': payload.package.category
-  }).sort({ pricePerKg: 1 });
+    const candidateTripQuery = Trip.findOne({
+      'origin.city': { $regex: new RegExp(payload.origin.city, 'i') },
+      'destination.city': { $regex: new RegExp(payload.destination.city, 'i') },
+      status: 'active',
+      safetyDepositPaid: true,
+      'availableCapacity.weightKg': { $gte: payload.package.weightKg },
+      'availableCapacity.allowedCategories': payload.package.category
+    }).sort({ pricePerKg: 1 });
 
-  if (candidateTrip) {
-    const quote = calculateQuote(candidateTrip.toObject(), draft.toObject());
-    draft.quotedPrice = quote.carrierEarning;
-    draft.platformFee = quote.platformFee;
-    draft.totalCharge = quote.totalCharge;
-    await draft.save();
+    if (session) {
+      candidateTripQuery.session(session);
+    }
+
+    const candidateTrip = await candidateTripQuery;
+
+    if (candidateTrip) {
+      const quote = calculateQuote(candidateTrip.toObject(), draft.toObject());
+      draft.quotedPrice = quote.carrierEarning;
+      draft.platformFee = quote.platformFee;
+      draft.totalCharge = quote.totalCharge;
+      await draft.save(session ? { session } : undefined);
+    }
+
+    await appendOutboxEvents(
+      [
+        {
+          topic: DOMAIN_TOPICS.delivery,
+          eventType: DELIVERY_EVENT_TYPES.requested,
+          aggregateType: 'delivery_request',
+          aggregateId: draft._id.toString(),
+          partitionKey: draft._id.toString(),
+        payload: {
+          requestId: draft._id.toString(),
+          senderId: userId,
+          origin: draft.origin,
+          destination: draft.destination,
+          preferredDeliveryWindow: draft.preferredDeliveryWindow,
+          package: draft.package,
+          status: draft.status,
+          paymentStatus: draft.paymentStatus,
+            totalCharge: draft.totalCharge || null
+          }
+        }
+      ],
+      session
+    );
+
+    return draft;
   }
 
-  await queueMatching(draft._id.toString());
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  let draft;
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    draft = await persistDeliveryRequest(session);
+    await session.commitTransaction();
+  } catch (error) {
+    await session.abortTransaction();
+
+    if (isTransactionUnsupported(error)) {
+      draft = await persistDeliveryRequest();
+    } else {
+      throw error;
+    }
+  } finally {
+    session.endSession();
+  }
   return draft;
 }
 
@@ -76,6 +132,28 @@ export async function updateRequest(userId: string, requestId: string, payload: 
 
   Object.assign(request, payload);
   await request.save();
+
+  await appendOutboxEvents([
+    {
+      topic: DOMAIN_TOPICS.delivery,
+      eventType: DELIVERY_EVENT_TYPES.updated,
+      aggregateType: 'delivery_request',
+      aggregateId: request._id.toString(),
+      partitionKey: request._id.toString(),
+      payload: {
+        requestId: request._id.toString(),
+        senderId: request.sender.toString(),
+        origin: request.origin,
+        destination: request.destination,
+        preferredDeliveryWindow: request.preferredDeliveryWindow,
+        package: request.package,
+        status: request.status,
+        paymentStatus: request.paymentStatus,
+        updates: payload
+      }
+    }
+  ]);
+
   return request;
 }
 
@@ -118,6 +196,26 @@ export async function cancelRequest(userId: string, requestId: string) {
       $push: { timeline: { event: 'cancelled', actor: request.sender, metadata: { reason: 'delivery_cancelled' } } }
     }
   );
+
+  await appendOutboxEvents([
+    {
+      topic: DOMAIN_TOPICS.delivery,
+      eventType: DELIVERY_EVENT_TYPES.cancelled,
+      aggregateType: 'delivery_request',
+      aggregateId: request._id.toString(),
+      partitionKey: request._id.toString(),
+      payload: {
+        requestId: request._id.toString(),
+        senderId: request.sender.toString(),
+        origin: request.origin,
+        destination: request.destination,
+        preferredDeliveryWindow: request.preferredDeliveryWindow,
+        package: request.package,
+        status: request.status,
+        paymentStatus: request.paymentStatus
+      }
+    }
+  ]);
 
   return request;
 }

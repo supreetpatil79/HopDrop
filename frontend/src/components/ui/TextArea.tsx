@@ -1,4 +1,4 @@
-import { TextareaHTMLAttributes } from 'react';
+import { forwardRef, TextareaHTMLAttributes } from 'react';
 import clsx from 'clsx';
 
 interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -6,7 +6,10 @@ interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   error?: string;
 }
 
-export function TextArea({ label, error, className, ...props }: TextAreaProps) {
+export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
+  { label, error, className, ...props },
+  ref
+) {
   return (
     <label className="flex w-full flex-col gap-1">
       {label ? <span className="text-sm font-medium text-text">{label}</span> : null}
@@ -17,8 +20,9 @@ export function TextArea({ label, error, className, ...props }: TextAreaProps) {
           className
         )}
         {...props}
+        ref={ref}
       />
       {error ? <span className="text-xs text-red-600">{error}</span> : null}
     </label>
   );
-}
+});

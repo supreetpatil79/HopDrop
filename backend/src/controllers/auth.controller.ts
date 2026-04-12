@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { ApiResponse } from '../utils/ApiResponse';
-import { logoutUser, refreshAuthToken, registerUser, sendOtp, verifyOtpLogin } from '../services/auth.service';
+import { demoLogin, logoutUser, refreshAuthToken, registerUser, sendOtp, verifyOtpLogin } from '../services/auth.service';
 
 export async function sendOtpController(req: Request, res: Response) {
   const { phone } = req.body;
@@ -23,6 +23,11 @@ export async function loginController(req: Request, res: Response) {
   const { phone, otp } = req.body;
   const result = await verifyOtpLogin(phone, otp);
   res.status(200).json(new ApiResponse('Login successful', result));
+}
+
+export async function demoLoginController(req: Request, res: Response) {
+  const result = await demoLogin(req.body.persona ?? req.body.role);
+  res.status(200).json(new ApiResponse('Demo login successful', result));
 }
 
 export async function refreshController(req: Request, res: Response) {

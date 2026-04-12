@@ -1,14 +1,14 @@
 import { Server as HttpServer } from 'http';
 import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
-import { env } from './env';
+import { allowedOrigins, env } from './env';
 
 export let io: Server;
 
 export function initSocket(server: HttpServer): Server {
   io = new Server(server, {
     cors: {
-      origin: env.FRONTEND_URL,
+      origin: allowedOrigins,
       credentials: true
     }
   });
@@ -37,7 +37,9 @@ export function initSocket(server: HttpServer): Server {
     });
 
     socket.on('location:update', (payload: { matchId: string; lat: number; lng: number }) => {
-      io.to(`match:${payload.matchId}`).emit('location:update', payload);
+      const enriched = { ...payload, at: Date.now() };
+      io.to(`match:${payload.matchId}`).emit('location:update', enriched);
+      io.to(`match:${payload.matchId}`).emit('carrier:location', enriched);
     });
   });
 

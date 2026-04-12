@@ -7,11 +7,14 @@ import {
   walletController
 } from '../controllers/user.controller';
 import { requireAuth } from '../middleware/auth.middleware';
+import { userRateLimiter } from '../middleware/rateLimiter';
 import { validate } from '../middleware/validate';
 import { asyncHandler } from '../utils/asyncHandler';
 import { updateMeSchema, verifyIdSchema } from '../validators/user.validators';
 
 const router = Router();
+
+router.use(userRateLimiter);
 
 router.get('/me', requireAuth, asyncHandler(meController));
 router.put('/me', requireAuth, validate(updateMeSchema), asyncHandler(updateMeController));
