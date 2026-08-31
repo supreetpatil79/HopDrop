@@ -130,6 +130,8 @@ const DeliveryRequestSchema = new Schema<IDeliveryRequest>(
 );
 
 DeliveryRequestSchema.index({ sender: 1, status: 1 });
+DeliveryRequestSchema.index({ status: 1, createdAt: -1 });
+DeliveryRequestSchema.index({ sender: 1, createdAt: -1 });
 DeliveryRequestSchema.index({ 'origin.city': 1, 'destination.city': 1, status: 1 });
 DeliveryRequestSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 

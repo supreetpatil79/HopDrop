@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { ErrorBoundary, LoadingState } from 'hopdrop-shared';
 import { AppLayout } from './components/layout/AppLayout';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { authApi } from './api/auth.api';
@@ -20,6 +21,8 @@ import NotFound from './pages/NotFound';
 export default function App() {
   const { isAuthenticated, isBootstrapping, setAuth, clearAuth, setBootstrapping } = useAuth();
   const demoMode = (import.meta.env.VITE_DEMO_MODE ?? 'true').toLowerCase() !== 'false';
+
+  const renderPage = (page: JSX.Element) => <ErrorBoundary>{page}</ErrorBoundary>;
 
   useEffect(() => {
     let active = true;
@@ -60,10 +63,10 @@ export default function App() {
   if (demoMode && isBootstrapping) {
     return (
       <AppLayout>
-        <div className="py-16 text-center">
-          <h1 className="text-xl font-semibold text-text">Starting HopDrop demo workspace</h1>
-          <p className="mt-2 text-sm text-text-muted">No OTP needed. Connecting your live dashboard.</p>
-        </div>
+        <LoadingState
+          title="Starting your carrier workspace"
+          description="No OTP needed in demo mode. We’re connecting your trip board, incoming requests, and live delivery feed."
+        />
       </AppLayout>
     );
   }
@@ -71,17 +74,17 @@ export default function App() {
   return (
     <AppLayout>
       <Routes>
-        <Route path="/" element={<CarrierHome />} />
+        <Route path="/" element={renderPage(<CarrierHome />)} />
 
-        <Route path="/auth/login" element={demoMode ? <Navigate to="/" replace /> : <LoginPage />} />
-        <Route path="/auth/register" element={demoMode ? <Navigate to="/" replace /> : <RegisterPage />} />
-        <Route path="/auth/otp-verify" element={demoMode ? <Navigate to="/" replace /> : <OTPVerifyPage />} />
+        <Route path="/auth/login" element={demoMode ? <Navigate to="/" replace /> : renderPage(<LoginPage />)} />
+        <Route path="/auth/register" element={demoMode ? <Navigate to="/" replace /> : renderPage(<RegisterPage />)} />
+        <Route path="/auth/otp-verify" element={demoMode ? <Navigate to="/" replace /> : renderPage(<OTPVerifyPage />)} />
 
         <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <CarrierHome />
+              {renderPage(<CarrierHome />)}
             </ProtectedRoute>
           }
         />
@@ -89,7 +92,7 @@ export default function App() {
           path="/post-trip"
           element={
             <ProtectedRoute>
-              <PostTrip />
+              {renderPage(<PostTrip />)}
             </ProtectedRoute>
           }
         />
@@ -97,7 +100,7 @@ export default function App() {
           path="/incoming-requests"
           element={
             <ProtectedRoute>
-              <IncomingRequests />
+              {renderPage(<IncomingRequests />)}
             </ProtectedRoute>
           }
         />
@@ -105,7 +108,7 @@ export default function App() {
           path="/active-delivery/:matchId"
           element={
             <ProtectedRoute>
-              <ActiveDelivery />
+              {renderPage(<ActiveDelivery />)}
             </ProtectedRoute>
           }
         />
@@ -113,7 +116,7 @@ export default function App() {
           path="/my-trips"
           element={
             <ProtectedRoute>
-              <MyTrips />
+              {renderPage(<MyTrips />)}
             </ProtectedRoute>
           }
         />
@@ -121,7 +124,7 @@ export default function App() {
           path="/earnings"
           element={
             <ProtectedRoute>
-              <Earnings />
+              {renderPage(<Earnings />)}
             </ProtectedRoute>
           }
         />
@@ -129,12 +132,12 @@ export default function App() {
           path="/profile"
           element={
             <ProtectedRoute>
-              <Profile />
+              {renderPage(<Profile />)}
             </ProtectedRoute>
           }
         />
         <Route path="/home" element={<Navigate to="/" replace />} />
-        <Route path="*" element={<NotFound />} />
+        <Route path="*" element={renderPage(<NotFound />)} />
       </Routes>
     </AppLayout>
   );

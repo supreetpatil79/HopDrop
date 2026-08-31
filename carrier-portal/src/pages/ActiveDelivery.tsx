@@ -13,6 +13,7 @@ import { OTPDisplay } from '../components/otp/OTPDisplay';
 import { OTPVerify } from '../components/otp/OTPVerify';
 import { TrackingMap } from '../components/map/TrackingMap';
 import { getSenderMatchHref } from '../utils/portal';
+import { formatINRPaise } from '../utils/format';
 
 export default function ActiveDelivery() {
   const { matchId = '' } = useParams();
@@ -107,6 +108,9 @@ export default function ActiveDelivery() {
   const canGeneratePickupOtp = ['sender_confirmed', 'active'].includes(match.status);
   const canGenerateDeliveryOtp = ['picked_up', 'in_transit'].includes(match.status);
   const showTrackingMap = MATCH_LOCATION_TRACKING_STATUSES.includes(match.status);
+  const payoutToCarrier = match.financials?.payoutToCarrier ?? match.payoutToCarrier ?? 0;
+  const totalCharge = match.financials?.totalCharge ?? match.agreedPrice ?? 0;
+  const platformFee = match.financials?.platformFee ?? Math.max(totalCharge - payoutToCarrier, 0);
 
   return (
     <div className="space-y-4">
@@ -142,8 +146,26 @@ export default function ActiveDelivery() {
           </div>
           <div className="rounded-lg border border-border px-3 py-3">
             <p className="text-xs uppercase tracking-wide text-text-muted">Payout</p>
-            <p className="mt-2 font-semibold">₹{Math.round((match.payoutToCarrier || 0) / 100)}</p>
-            <p className="text-sm text-text-muted">Agreed price ₹{Math.round((match.agreedPrice || 0) / 100)}</p>
+            <p className="mt-2 font-semibold">{formatINRPaise(payoutToCarrier)}</p>
+            <p className="text-sm text-text-muted">Sender fee {formatINRPaise(platformFee)}</p>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="space-y-3">
+        <h2 className="text-lg font-semibold">Money Breakdown</h2>
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="rounded-lg border border-border px-3 py-3">
+            <p className="text-xs uppercase tracking-wide text-text-muted">Carrier Payout</p>
+            <p className="mt-2 text-xl font-bold text-primary">{formatINRPaise(payoutToCarrier)}</p>
+          </div>
+          <div className="rounded-lg border border-border px-3 py-3">
+            <p className="text-xs uppercase tracking-wide text-text-muted">Sender Total</p>
+            <p className="mt-2 text-xl font-bold text-dark">{formatINRPaise(totalCharge)}</p>
+          </div>
+          <div className="rounded-lg border border-border px-3 py-3">
+            <p className="text-xs uppercase tracking-wide text-text-muted">Platform Fee</p>
+            <p className="mt-2 text-xl font-bold text-dark">{formatINRPaise(platformFee)}</p>
           </div>
         </div>
       </Card>
@@ -187,16 +209,13 @@ export default function ActiveDelivery() {
       </Card>
 
       {match.status === 'delivery_pending' || deliveryOtp ? (
-        <Card className="space-y-3">
-          <h2 className="text-lg font-semibold">Recipient Delivery OTP Verify</h2>
-          <OTPVerify
-            label="Delivery OTP"
-            onVerify={async (otp) => {
-              await matchApi.verifyDeliveryOtp(matchId, otp);
-              toast.success('Delivery OTP verified');
-              queryClient.invalidateQueries({ queryKey: ['carrier-match', matchId] });
-            }}
-          />
+        <Card className="space-y-3 border-emerald-500/30 bg-emerald-950/20">
+          <div className="flex items-center gap-2 text-emerald-400">
+            <h2 className="text-lg font-semibold">Delivery Handoff in Progress</h2>
+          </div>
+          <p className="text-sm text-text-muted">
+            Share your 6-digit Delivery Code with the recipient upon physical handoff. As soon as the recipient verifies the code on their screen, your payout will be instantly released.
+          </p>
         </Card>
       ) : null}
     </div>

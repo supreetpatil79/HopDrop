@@ -11,9 +11,11 @@ import { Input } from '../components/ui/Input';
 import { TextArea } from '../components/ui/TextArea';
 import { MatchTimeline } from '../components/match/MatchTimeline';
 import { LiveMap } from '../components/map/LiveMap';
+import { RoutePreviewMap } from '../components/map/RoutePreviewMap';
 import { useAuth } from '../hooks/useAuth';
 import { useSocket } from '../hooks/useSocket';
 import { ratingSchema } from '../validators/forms';
+
 
 type RatingValues = {
   score: number;
@@ -116,15 +118,31 @@ export default function MatchDetail() {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
-      <div className="space-y-4">
-        <Card className="space-y-2">
-          <h1 className="text-2xl font-bold">Match Detail</h1>
-          <p className="text-sm text-text-muted">
-            {match.deliveryRequest?.origin?.city} → {match.deliveryRequest?.destination?.city}
-          </p>
-          <p className="text-sm">Current Status: <span className="font-semibold">{match.status}</span></p>
-        </Card>
+    <div className="space-y-6">
+      {match.deliveryRequest?.origin?.city && match.deliveryRequest?.destination?.city ? (
+        <RoutePreviewMap
+          origin={{
+            city: match.deliveryRequest.origin.city,
+            coords: (match.deliveryRequest.origin as any).coordinates?.coordinates || [77.5946, 12.9716]
+          }}
+          destination={{
+            city: match.deliveryRequest.destination.city,
+            coords: (match.deliveryRequest.destination as any).coordinates?.coordinates || [72.8777, 19.076]
+          }}
+          modeOfTransport={match.trip?.modeOfTransport || 'train'}
+        />
+      ) : null}
+
+      <div className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
+        <div className="space-y-4">
+          <Card className="space-y-2">
+            <h1 className="text-2xl font-bold">Match Detail</h1>
+            <p className="text-sm text-text-muted">
+              {match.deliveryRequest?.origin?.city} → {match.deliveryRequest?.destination?.city}
+            </p>
+            <p className="text-sm">Current Status: <span className="font-semibold">{match.status}</span></p>
+          </Card>
+
 
         <Card className="space-y-3">
           <h2 className="font-semibold">Status Timeline</h2>
@@ -261,5 +279,7 @@ export default function MatchDetail() {
         </Card>
       </div>
     </div>
+  </div>
   );
 }
+

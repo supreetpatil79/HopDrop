@@ -7,7 +7,7 @@ import { Transaction } from '../models/Transaction';
 import { Trip } from '../models/Trip';
 import { User } from '../models/User';
 import { ApiError } from '../utils/ApiError';
-import { isTransactionUnsupported } from '../utils/mongoTransactions';
+import { isTransactionUnsupported, runInTransaction } from '../utils/mongoTransactions';
 import { env } from '../config/env';
 import { matchTripAgainstPendingRequests } from './matching.service';
 import { appendOutboxEvents } from './outbox.service';
@@ -71,24 +71,7 @@ export async function createTrip(userId: string, payload: any) {
     return trip;
   }
 
-  let trip;
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    trip = await persistTrip(session);
-    await session.commitTransaction();
-  } catch (error) {
-    await session.abortTransaction();
-
-    if (isTransactionUnsupported(error)) {
-      trip = await persistTrip();
-    } else {
-      throw error;
-    }
-  } finally {
-    session.endSession();
-  }
+  const trip = await runInTransaction(persistTrip);
 
   const departureMs = new Date(trip.departureTime).getTime();
   const now = Date.now();
@@ -153,10 +136,17 @@ export async function listTrips(filters: {
     Trip.countDocuments(query)
   ]);
 
-  const data = items.map((trip) => ({
-    ...trip.toObject(),
-    estimatedPrice: Math.round(trip.pricePerKg * 100)
-  }));
+  const data = items.map((trip) => {
+    const obj = trip.toObject();
+    if (obj.transportDetails) {
+      delete obj.transportDetails.pnr;
+      delete obj.transportDetails.seatNumber;
+    }
+    return {
+      ...obj,
+      estimatedPrice: Math.round(trip.pricePerKg * 100)
+    };
+  });
 
   return {
     items: data,
@@ -167,10 +157,22 @@ export async function listTrips(filters: {
   };
 }
 
-export async function getTripById(tripId: string) {
+export async function getTripById(tripId: string, requestingUserId?: string) {
   const trip = await Trip.findById(tripId).populate('carrier', 'name rating profilePhoto totalDeliveries totalTripsAsCarrier');
   if (!trip) {
     throw new ApiError(404, 'Trip not found');
+  }
+
+  const carrierId = (trip.carrier as any)?._id ? (trip.carrier as any)._id.toString() : trip.carrier.toString();
+  const isOwner = requestingUserId && carrierId === requestingUserId;
+
+  if (!isOwner && trip.transportDetails) {
+    const tripObj = trip.toObject();
+    if (tripObj.transportDetails) {
+      delete tripObj.transportDetails.pnr;
+      delete tripObj.transportDetails.seatNumber;
+    }
+    return tripObj;
   }
 
   return trip;

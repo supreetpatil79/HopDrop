@@ -1,4 +1,5 @@
-import { PropsWithChildren } from 'react';
+import { MouseEvent, PropsWithChildren } from 'react';
+import { Card } from './Card';
 
 export interface ModalProps extends PropsWithChildren {
   open: boolean;
@@ -12,11 +13,22 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-lg rounded-lg bg-white p-4" onClick={(e) => e.stopPropagation()}>
-        {title ? <h3 className="mb-2 text-lg font-semibold">{title}</h3> : null}
+    <div
+      role="presentation"
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <Card
+        padding="lg"
+        className="w-full max-w-lg"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onClick={(event: MouseEvent<HTMLDivElement>) => event.stopPropagation()}
+      >
+        {title ? <h3 className="mb-3 text-xl font-semibold tracking-[-0.02em] text-dark">{title}</h3> : null}
         {children}
-      </div>
+      </Card>
     </div>
   );
 }

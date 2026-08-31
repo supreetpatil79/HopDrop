@@ -40,3 +40,7 @@ scrape_configs:
     metrics_path: /metrics
     static_configs:
       - targets: ['analytics-pipeline:5006']
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']

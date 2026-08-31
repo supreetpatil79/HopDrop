@@ -33,6 +33,11 @@ const booleanFromEnv = (defaultValue: boolean) =>
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().default(5000),
+  REQUEST_TIMEOUT_MS: z.coerce.number().int().min(1000).max(120000).default(30000),
+  HEADERS_TIMEOUT_MS: z.coerce.number().int().min(1000).max(120000).default(10000),
+  KEEP_ALIVE_TIMEOUT_MS: z.coerce.number().int().min(1000).max(120000).default(5000),
+  MAX_CONNECTIONS: z.coerce.number().int().min(100).max(100000).default(2000),
+  MAX_IN_FLIGHT_REQUESTS: z.coerce.number().int().min(100).max(100000).default(1000),
   FRONTEND_URL: z.string().default('http://localhost'),
   INTERNAL_API_TOKEN: z.string().min(16).default('hopdrop-local-internal-token'),
   MONGODB_URI: z.string().min(1),
@@ -40,6 +45,10 @@ const envSchema = z.object({
   REDIS_CACHE_URL: z.string().optional(),
   REDIS_QUEUE_URL: z.string().optional(),
   REALTIME_EVENT_CHANNEL: z.string().default('hopdrop:realtime:events'),
+  BULL_BOARD_PASSWORD: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.string().min(8).optional()
+  ),
   ROUTING_SEARCH_URL: z.preprocess(
     (value) => (value === '' ? undefined : value),
     z.string().url().optional()
@@ -93,6 +102,27 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data;
+
+// Production must never boot with local/demo credentials. Keep development and
+// test defaults convenient, but fail closed when a production process is
+// accidentally pointed at a local-style environment file.
+if (env.NODE_ENV === 'production') {
+  const productionConfigErrors: string[] = [];
+
+  if (env.DEMO_MODE) {
+    productionConfigErrors.push('DEMO_MODE must be false');
+  }
+  if (!process.env.INTERNAL_API_TOKEN || process.env.INTERNAL_API_TOKEN === 'hopdrop-local-internal-token') {
+    productionConfigErrors.push('INTERNAL_API_TOKEN must be explicitly configured');
+  }
+  if (!process.env.BULL_BOARD_PASSWORD || process.env.BULL_BOARD_PASSWORD === 'hopdrop-local-queues') {
+    productionConfigErrors.push('BULL_BOARD_PASSWORD must be explicitly configured');
+  }
+
+  if (productionConfigErrors.length > 0) {
+    throw new Error(`Unsafe production configuration: ${productionConfigErrors.join('; ')}`);
+  }
+}
 
 function expandLoopbackOrigin(origin: string) {
   try {

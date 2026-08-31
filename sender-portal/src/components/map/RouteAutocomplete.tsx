@@ -8,9 +8,20 @@ interface RouteAutocompleteProps {
   onInputChange?: (value: string) => void;
   field: SearchField;
   placeholder?: string;
+  helperText?: string;
+  error?: string;
 }
 
-export function RouteAutocomplete({ label, value, onChange, onInputChange, field, placeholder }: RouteAutocompleteProps) {
+export function RouteAutocomplete({
+  label,
+  value,
+  onChange,
+  onInputChange,
+  field,
+  placeholder,
+  helperText,
+  error
+}: RouteAutocompleteProps) {
   return (
     <SharedRouteAutocomplete
       label={label}
@@ -18,6 +29,8 @@ export function RouteAutocomplete({ label, value, onChange, onInputChange, field
       onChange={onChange}
       onInputChange={onInputChange}
       placeholder={placeholder}
+      helperText={helperText}
+      error={error}
       context={{ actor: 'sender', field }}
       fetchSuggestions={async (q) => {
         const res = await api.get('/maps/suggest', { params: { q, region: 'IND', actor: 'sender', field } });

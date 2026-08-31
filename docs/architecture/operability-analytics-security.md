@@ -80,13 +80,23 @@ Prometheus alert rules now cover:
 - core API down
 - core API 5xx rate
 - outbox publish failures
+- core API queue backlog
+- core API queue job failures
 - routing-search down
 - routing-search p95 latency
 - routing-search 5xx rate
 - realtime gateway down
 - search indexer down
+- search indexer consumer disconnected
+- matching orchestrator consumer disconnected
+- notification consumer disconnected
+- analytics pipeline consumer disconnected
 
 Production delivery can route these alerts through Grafana Alerting, PagerDuty, or Opsgenie.
+Operational handoff and incident response live in:
+
+- [Production readiness checklist](../runbooks/production-readiness-checklist.md)
+- [Incident response runbook](../runbooks/incident-response.md)
 
 ## Security Baseline
 

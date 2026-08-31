@@ -28,6 +28,24 @@ groups:
           summary: HopDrop outbox publish failures detected
           description: The core API outbox relay has recorded Kafka publish failures in the last 10 minutes.
 
+      - alert: HopDropCoreApiQueueBacklogHigh
+        expr: hopdrop_core_api_queue_jobs{state="waiting"} > 25
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: HopDrop core API queue backlog is elevated
+          description: Queue {{ $labels.queue }} has more than 25 waiting jobs for at least 10 minutes.
+
+      - alert: HopDropCoreApiQueueFailuresDetected
+        expr: increase(hopdrop_core_api_queue_job_outcomes_total{outcome="failed"}[10m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: HopDrop core API queue failures detected
+          description: Queue {{ $labels.queue }} has recorded one or more failed jobs in the last 10 minutes.
+
   - name: hopdrop-routing-search
     rules:
       - alert: HopDropRoutingSearchDown
@@ -79,6 +97,15 @@ groups:
           summary: HopDrop search indexer is down
           description: The search indexer metrics endpoint has been unreachable for at least 2 minutes.
 
+      - alert: HopDropSearchIndexerConsumerDisconnected
+        expr: hopdrop_search_indexer_consumer_connected == 0
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: HopDrop search indexer consumer is disconnected
+          description: The search indexer Kafka consumer has been disconnected for at least 5 minutes.
+
   - name: hopdrop-matching-orchestrator
     rules:
       - alert: HopDropMatchingOrchestratorDown
@@ -89,6 +116,15 @@ groups:
         annotations:
           summary: HopDrop matching orchestrator is down
           description: The matching orchestrator metrics endpoint has been unreachable for at least 2 minutes.
+
+      - alert: HopDropMatchingOrchestratorConsumerDisconnected
+        expr: hopdrop_matching_orchestrator_consumer_connected == 0
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: HopDrop matching orchestrator consumer is disconnected
+          description: The matching orchestrator Kafka consumer has been disconnected for at least 5 minutes.
 
   - name: hopdrop-notification-consumer
     rules:
@@ -101,6 +137,15 @@ groups:
           summary: HopDrop notification consumer is down
           description: The notification consumer metrics endpoint has been unreachable for at least 2 minutes.
 
+      - alert: HopDropNotificationConsumerDisconnected
+        expr: hopdrop_notification_consumer_consumer_connected == 0
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: HopDrop notification consumer is disconnected
+          description: The notification consumer Kafka consumer has been disconnected for at least 5 minutes.
+
   - name: hopdrop-analytics-pipeline
     rules:
       - alert: HopDropAnalyticsPipelineDown
@@ -111,3 +156,12 @@ groups:
         annotations:
           summary: HopDrop analytics pipeline is down
           description: The analytics pipeline metrics endpoint has been unreachable for at least 2 minutes.
+
+      - alert: HopDropAnalyticsPipelineConsumerDisconnected
+        expr: hopdrop_analytics_pipeline_consumer_connected == 0
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: HopDrop analytics pipeline consumer is disconnected
+          description: The analytics pipeline Kafka consumer has been disconnected for at least 5 minutes.

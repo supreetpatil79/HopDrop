@@ -1,5 +1,6 @@
 export * from './api';
 export * from './auth';
+export * from './components';
 export * from './constants';
 export * from './hooks';
 export * from './maps';

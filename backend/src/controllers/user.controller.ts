@@ -1,5 +1,12 @@
 import { Request, Response } from 'express';
-import { getMyProfile, getPublicProfile, getWallet, updateMyProfile, verifyGovernmentId } from '../services/user.service';
+import {
+  deleteMyAccount,
+  getMyProfile,
+  getPublicProfile,
+  getWallet,
+  updateMyProfile,
+  verifyGovernmentId
+} from '../services/user.service';
 import { ApiResponse } from '../utils/ApiResponse';
 
 export async function meController(req: Request, res: Response) {
@@ -10,6 +17,11 @@ export async function meController(req: Request, res: Response) {
 export async function updateMeController(req: Request, res: Response) {
   const data = await updateMyProfile(req.user!.id, req.body);
   res.status(200).json(new ApiResponse('Profile updated', data));
+}
+
+export async function deleteMeController(req: Request, res: Response) {
+  const data = await deleteMyAccount(req.user!.id);
+  res.status(200).json(new ApiResponse('Account deactivated', data));
 }
 
 export async function verifyIdController(req: Request, res: Response) {

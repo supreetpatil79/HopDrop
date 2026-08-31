@@ -25,7 +25,7 @@ export async function listTripsController(req: Request, res: Response) {
 }
 
 export async function getTripController(req: Request, res: Response) {
-  const data = await getTripById(req.params.tripId);
+  const data = await getTripById(req.params.tripId, req.user?.id);
   res.status(200).json(new ApiResponse('Trip fetched', data));
 }
 

@@ -49,4 +49,9 @@ const TransactionSchema = new Schema<ITransaction>(
   { timestamps: true }
 );
 
+TransactionSchema.index({ user: 1, type: 1, razorpayOrderId: 1 });
+TransactionSchema.index({ razorpayPaymentId: 1 }, { sparse: true });
+TransactionSchema.index({ razorpayOrderId: 1 });
+TransactionSchema.index({ match: 1, type: 1 });
+
 export const Transaction = model<ITransaction, TransactionModel>('Transaction', TransactionSchema);

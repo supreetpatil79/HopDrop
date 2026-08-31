@@ -5,12 +5,14 @@ import { Match } from '../models/Match';
 import { Trip } from '../models/Trip';
 import { User } from '../models/User';
 import { ApiError } from '../utils/ApiError';
-import { isTransactionUnsupported } from '../utils/mongoTransactions';
+import { isTransactionUnsupported, runInTransaction } from '../utils/mongoTransactions';
 import { calculateQuote } from '../utils/pricing';
 import { appendOutboxEvents } from './outbox.service';
 import { confirmDeliveryPayment, createDeliveryOrder } from './payment.service';
+import { findMatches } from './matching.service';
 
 export async function createDeliveryRequest(userId: string, payload: any) {
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
   async function persistDeliveryRequest(session?: mongoose.ClientSession) {
     const draft = new DeliveryRequest({
       ...payload,
@@ -72,26 +74,7 @@ export async function createDeliveryRequest(userId: string, payload: any) {
     return draft;
   }
 
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  let draft;
-
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    draft = await persistDeliveryRequest(session);
-    await session.commitTransaction();
-  } catch (error) {
-    await session.abortTransaction();
-
-    if (isTransactionUnsupported(error)) {
-      draft = await persistDeliveryRequest();
-    } else {
-      throw error;
-    }
-  } finally {
-    session.endSession();
-  }
+  const draft = await runInTransaction(persistDeliveryRequest);
   return draft;
 }
 
@@ -246,7 +229,16 @@ export async function getRequestMatches(userId: string, requestId: string) {
     throw new ApiError(403, 'Forbidden');
   }
 
-  return Match.find({ deliveryRequest: requestId })
+  let matches = await Match.find({ deliveryRequest: requestId })
     .populate('carrier', 'name rating profilePhoto totalDeliveries')
     .populate('trip');
+
+  if (!matches || matches.length === 0) {
+    await findMatches(requestId);
+    matches = await Match.find({ deliveryRequest: requestId })
+      .populate('carrier', 'name rating profilePhoto totalDeliveries')
+      .populate('trip');
+  }
+
+  return matches;
 }

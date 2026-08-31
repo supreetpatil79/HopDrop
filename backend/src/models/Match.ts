@@ -144,7 +144,9 @@ const MatchSchema = new Schema<IMatch>(
 );
 
 MatchSchema.index({ trip: 1, deliveryRequest: 1 }, { unique: true });
+MatchSchema.index({ deliveryRequest: 1, carrier: 1 });
 MatchSchema.index({ carrier: 1, status: 1 });
 MatchSchema.index({ sender: 1, status: 1 });
+MatchSchema.index({ status: 1, createdAt: -1 });
 
 export const Match = model<IMatch, MatchModel>('Match', MatchSchema);

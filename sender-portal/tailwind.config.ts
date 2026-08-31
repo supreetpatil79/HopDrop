@@ -1,7 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 export default {
-  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  content: ['./index.html', './src/**/*.{ts,tsx}', '../shared/src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       fontFamily: {
@@ -9,21 +9,21 @@ export default {
         body: ['DM Sans', 'sans-serif']
       },
       colors: {
-        primary: '#00C853',
-        'primary-dark': '#00A046',
+        primary: '#0F766E',
+        'primary-dark': '#115E59',
         surface: '#FFFFFF',
-        'surface-alt': '#F8F9FA',
-        text: '#111827',
-        'text-muted': '#6B7280',
-        border: '#E5E7EB',
-        dark: '#0F1117',
-        'dark-surface': '#1A1D23'
+        'surface-alt': '#F4F7FB',
+        text: '#0F172A',
+        'text-muted': '#52607A',
+        border: '#D7E0EA',
+        dark: '#0B1220',
+        'dark-surface': '#111827'
       },
       borderRadius: {
         sm: '8px',
         md: '12px',
-        lg: '16px',
-        xl: '24px'
+        lg: '18px',
+        xl: '28px'
       }
     }
   },

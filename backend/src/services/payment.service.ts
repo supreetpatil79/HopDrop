@@ -3,6 +3,7 @@ import Razorpay from 'razorpay';
 import { env } from '../config/env';
 import { DELIVERY_EVENT_TYPES, DOMAIN_TOPICS, TRIP_EVENT_TYPES } from '../events/domainEvents';
 import { DeliveryRequest } from '../models/DeliveryRequest';
+import { ProcessedWebhook } from '../models/ProcessedWebhook';
 import { Transaction } from '../models/Transaction';
 import { Trip } from '../models/Trip';
 import { User } from '../models/User';
@@ -11,34 +12,43 @@ import { holdFunds } from './escrow.service';
 import { emitToUser, notifyUser } from './notification.service';
 import { appendOutboxEvents } from './outbox.service';
 
+
 const razorpay = new Razorpay({
   key_id: env.RAZORPAY_KEY_ID,
   key_secret: env.RAZORPAY_KEY_SECRET
 });
 
 function verifySignature(orderId: string, paymentId: string, signature: string): boolean {
-  if (orderId.startsWith('mock_order_') && signature === 'mock_signature') {
+  if (env.DEMO_MODE && orderId.startsWith('mock_order_') && signature === 'mock_signature') {
     return true;
   }
 
   const hmac = crypto.createHmac('sha256', env.RAZORPAY_KEY_SECRET);
   hmac.update(`${orderId}|${paymentId}`);
   const generated = hmac.digest('hex');
-  return generated === signature;
+  const genBuf = Buffer.from(generated, 'utf8');
+  const sigBuf = Buffer.from(signature, 'utf8');
+  if (genBuf.length !== sigBuf.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(genBuf, sigBuf);
 }
 
 async function createOrder(amount: number, receipt: string, notes: Record<string, string>) {
   try {
     return await razorpay.orders.create({ amount, currency: 'INR', receipt, notes });
-  } catch (_error) {
-    return {
-      id: `mock_order_${Date.now()}`,
-      amount,
-      currency: 'INR',
-      receipt,
-      notes,
-      status: 'created'
-    };
+  } catch (error) {
+    if (env.DEMO_MODE) {
+      return {
+        id: `mock_order_${Date.now()}`,
+        amount,
+        currency: 'INR',
+        receipt,
+        notes,
+        status: 'created'
+      };
+    }
+    throw new ApiError(502, `Failed to create payment order with provider: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -327,14 +337,40 @@ export async function handleWebhook(rawBody: Buffer | string, signature: string 
 
   const body = Buffer.isBuffer(rawBody) ? rawBody.toString('utf8') : rawBody;
   const digest = crypto.createHmac('sha256', env.RAZORPAY_WEBHOOK_SECRET).update(body).digest('hex');
+  const digestBuf = Buffer.from(digest, 'utf8');
+  const sigBuf = Buffer.from(signature, 'utf8');
 
-  if (digest !== signature) {
+  if (digestBuf.length !== sigBuf.length || !crypto.timingSafeEqual(digestBuf, sigBuf)) {
     throw new ApiError(400, 'Invalid webhook signature');
   }
 
   const payload = JSON.parse(body);
   const event = payload.event as string;
   const paymentEntity = payload.payload?.payment?.entity;
+
+  if (!paymentEntity?.id) {
+    // No payment entity — acknowledge and skip
+    return { received: true };
+  }
+
+  // ── Idempotency Guard ─────────────────────────────────────────────────────
+  // Attempt to record this event atomically. If the unique index on eventId
+  // rejects the insert (E11000), this webhook was already processed — return
+  // 200 immediately so Razorpay stops retrying without processing twice.
+  // ─────────────────────────────────────────────────────────────────────────
+  try {
+    await ProcessedWebhook.create({
+      eventId: paymentEntity.id,
+      event,
+      orderId: paymentEntity.order_id || 'unknown'
+    });
+  } catch (err: any) {
+    if (err?.code === 11000) {
+      // Already processed — idempotent response
+      return { received: true, idempotent: true };
+    }
+    throw err;
+  }
 
   if (event === 'payment.captured' && paymentEntity?.order_id) {
     await Transaction.findOneAndUpdate(
@@ -361,3 +397,4 @@ export async function handleWebhook(rawBody: Buffer | string, signature: string 
 
   return { received: true };
 }
+

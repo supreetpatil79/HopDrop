@@ -1,0 +1,44 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "hopdrop.fullname" . }}
+  labels:
+    {{- include "hopdrop.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  tls:
+    - hosts:
+        - {{ .Values.global.domain }}
+      secretName: {{ .Values.ingress.tlsSecretName }}
+  rules:
+    - host: {{ .Values.global.domain }}
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "hopdrop.fullname" . }}-backend
+                port: { name: http }
+          - path: /socket.io
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "hopdrop.fullname" . }}-realtime-gateway
+                port: { name: http }
+          - path: /carrier
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "hopdrop.fullname" . }}-carrier
+                port: { name: http }
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "hopdrop.fullname" . }}-sender
+                port: { name: http }
+{{- end }}

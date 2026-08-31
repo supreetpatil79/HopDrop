@@ -1,0 +1,19 @@
+global:
+  domain: staging.hopdrop.example.com
+  existingSecret: hopdrop-staging-secrets
+
+images:
+  registry: ghcr.io/replace-me
+  pullPolicy: Always
+
+services:
+  backend: { replicas: 1 }
+  routingSearch: { replicas: 1 }
+  realtimeGateway: { replicas: 1 }
+
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 3
+
+podDisruptionBudget:
+  minAvailable: 0

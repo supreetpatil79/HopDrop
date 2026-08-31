@@ -32,9 +32,11 @@ router.post('/:matchId/sender-confirm', matchWriteRateLimiter, asyncHandler(send
 router.post('/:matchId/sender-reject', matchWriteRateLimiter, asyncHandler(senderRejectController));
 
 router.post('/:matchId/generate-pickup-otp', matchWriteRateLimiter, asyncHandler(generatePickupOtpController));
+router.post('/:matchId/pickup-otp', matchWriteRateLimiter, asyncHandler(generatePickupOtpController));
 router.post('/:matchId/verify-pickup-otp', matchWriteRateLimiter, validate(verifyOtpSchema), asyncHandler(verifyPickupOtpController));
 
 router.post('/:matchId/generate-delivery-otp', matchWriteRateLimiter, asyncHandler(generateDeliveryOtpController));
+router.post('/:matchId/delivery-otp', matchWriteRateLimiter, asyncHandler(generateDeliveryOtpController));
 router.post('/:matchId/verify-delivery-otp', matchWriteRateLimiter, validate(verifyOtpSchema), asyncHandler(verifyDeliveryOtpController));
 
 router.post('/:matchId/rate', matchWriteRateLimiter, validate(rateMatchSchema), asyncHandler(rateMatchController));

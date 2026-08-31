@@ -40,7 +40,8 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
-      retry: 1,
+      retry: 2,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
       refetchOnWindowFocus: false
     }
   }
@@ -54,11 +55,27 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <App />
         <Toaster
           position="top-right"
+          gutter={12}
+          containerStyle={{ top: 88 }}
           toastOptions={{
             style: {
-              background: '#111827',
-              color: '#ffffff',
-              border: '1px solid #1f2937'
+              background: '#0b1220',
+              color: '#f8fafc',
+              border: '1px solid rgba(148, 163, 184, 0.18)',
+              borderRadius: '18px',
+              boxShadow: '0 18px 50px -24px rgba(15, 23, 42, 0.55)'
+            },
+            success: {
+              iconTheme: {
+                primary: '#0f766e',
+                secondary: '#f8fafc'
+              }
+            },
+            error: {
+              iconTheme: {
+                primary: '#dc2626',
+                secondary: '#f8fafc'
+              }
             }
           }}
         />

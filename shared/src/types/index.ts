@@ -23,8 +23,18 @@ export interface IDelivery {
   sender: string | IUser;
   origin: { city: string };
   destination: { city: string };
+  package?: {
+    description?: string;
+    category?: string;
+    weightKg?: number;
+    isFragile?: boolean;
+    declaredValue?: number;
+  };
   status: string;
   paymentStatus: string;
+  quotedPrice?: number;
+  platformFee?: number;
+  totalCharge?: number;
 }
 
 export interface IMatch {
@@ -35,6 +45,15 @@ export interface IMatch {
   sender: string | IUser;
   status: string;
   timeline: Array<{ event: string; timestamp: string }>;
+  agreedPrice?: number;
+  payoutToCarrier?: number;
+  financials?: {
+    payoutToCarrier: number;
+    totalCharge: number;
+    platformFee: number;
+    payoutPerKg: number;
+    packageWeightKg: number;
+  };
 }
 
 export interface ITransaction {

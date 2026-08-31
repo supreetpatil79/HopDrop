@@ -1,14 +1,14 @@
-import { Clock, Star, Train, Bus, Car, Bike, Plane } from 'lucide-react';
+import { Bike, Bus, Car, Clock3, Plane, ShieldCheck, Star, Train } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 
 const iconMap: Record<string, JSX.Element> = {
-  bus: <Bus className="h-4 w-4" />,
-  train: <Train className="h-4 w-4" />,
-  car: <Car className="h-4 w-4" />,
-  bike: <Bike className="h-4 w-4" />,
-  flight: <Plane className="h-4 w-4" />,
-  other: <Train className="h-4 w-4" />
+  bus: <Bus className="h-3.5 w-3.5" />,
+  train: <Train className="h-3.5 w-3.5" />,
+  car: <Car className="h-3.5 w-3.5" />,
+  bike: <Bike className="h-3.5 w-3.5" />,
+  flight: <Plane className="h-3.5 w-3.5" />,
+  other: <Train className="h-3.5 w-3.5" />
 };
 
 interface TripCardProps {
@@ -18,39 +18,78 @@ interface TripCardProps {
 }
 
 export function TripCard({ trip, actionLabel, onAction }: TripCardProps) {
+  const originCity = trip.origin?.city || 'Origin';
+  const destCity = trip.destination?.city || 'Destination';
+  const departureLabel = trip.departureTime
+    ? new Date(trip.departureTime).toLocaleDateString('en-IN', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    : 'Departure pending';
+  const rating = trip.carrier?.rating?.average ? Number(trip.carrier.rating.average).toFixed(1) : '5.0';
+
   return (
-    <Card className="space-y-3">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-text-muted">
-            {trip.origin?.city} → {trip.destination?.city}
-          </p>
-          <h3 className="text-lg font-semibold text-dark">{trip.carrier?.name || 'Carrier'}</h3>
+    <Card className="flex flex-col justify-between gap-4 p-5" interactive>
+      <div className="space-y-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-base font-bold tracking-tight text-zinc-950">{originCity}</span>
+              <span className="text-zinc-400 font-normal">→</span>
+              <span className="text-base font-bold tracking-tight text-zinc-950">{destCity}</span>
+            </div>
+            <p className="text-xs text-zinc-500 font-medium">{trip.carrier?.name || 'Verified Carrier'}</p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-xs font-medium capitalize text-zinc-700">
+            {iconMap[trip.modeOfTransport] || iconMap.other}
+            {trip.modeOfTransport || 'Transit'}
+          </span>
         </div>
-        <span className="inline-flex items-center gap-1 rounded-full bg-dark px-2 py-1 text-xs text-white">
-          {iconMap[trip.modeOfTransport] || iconMap.other}
-          {trip.modeOfTransport}
-        </span>
+
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-xl border border-zinc-100 bg-zinc-50/80 p-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Departure</p>
+            <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-zinc-800 tabular-nums">
+              <Clock3 className="h-3 w-3 text-zinc-500" />
+              {departureLabel}
+            </p>
+          </div>
+          <div className="rounded-xl border border-zinc-100 bg-zinc-50/80 p-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Rating</p>
+            <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-zinc-800">
+              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+              {rating}
+            </p>
+          </div>
+          <div className="rounded-xl border border-zinc-100 bg-zinc-50/80 p-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Capacity</p>
+            <p className="mt-1 text-xs font-semibold text-zinc-800 tabular-nums">
+              {trip.availableCapacity?.weightKg || '-'} kg
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 text-sm text-text-muted">
-        <span className="inline-flex items-center gap-1">
-          <Clock className="h-4 w-4" />
-          {new Date(trip.departureTime).toLocaleString()}
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <Star className="h-4 w-4 text-yellow-500" />
-          {trip.carrier?.rating?.average?.toFixed?.(1) || '5.0'}
-        </span>
-        <span>{trip.availableCapacity?.weightKg}kg capacity</span>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <p className="text-sm">
-          <span className="font-semibold">₹{trip.pricePerKg}</span>
-          <span className="text-text-muted"> / kg</span>
-        </p>
-        {actionLabel && onAction ? <Button onClick={onAction}>{actionLabel}</Button> : null}
+      <div className="flex items-center justify-between gap-3 border-t border-zinc-100 pt-3">
+        <div>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Rate</span>
+          <p className="text-base font-bold text-zinc-950 tabular-nums">
+            ₹{trip.pricePerKg}
+            <span className="ml-1 text-xs font-normal text-zinc-500">/ kg</span>
+          </p>
+        </div>
+        {actionLabel && onAction ? (
+          <Button size="sm" onClick={onAction}>
+            {actionLabel}
+          </Button>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Verified Escrow
+          </span>
+        )}
       </div>
     </Card>
   );

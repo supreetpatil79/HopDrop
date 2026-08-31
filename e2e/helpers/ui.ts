@@ -44,17 +44,17 @@ export function toDateTimeLocal(date: Date) {
 }
 
 export async function selectRouteSuggestion(page: Page, label: string, query: string, optionText: string) {
-  const input = page.getByLabel(label, { exact: true });
+  const input = page.getByLabel(new RegExp(`^${escapeRegex(label)}$`, 'i'));
   await expect(input).toBeVisible();
   await input.fill(query);
 
   const option = page
     .getByRole('option', {
-      name: new RegExp(`^${escapeRegex(optionText)}\\b`, 'i')
+      name: new RegExp(`\\b${escapeRegex(optionText)}\\b`, 'i')
     })
     .first();
 
   await expect(option).toBeVisible();
-  await input.press('Enter');
+  await option.click();
   await expect(input).toHaveValue(optionText);
 }

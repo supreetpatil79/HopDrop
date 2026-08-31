@@ -3,6 +3,7 @@ import { Transaction } from '../models/Transaction';
 import { Trip } from '../models/Trip';
 import { User } from '../models/User';
 import { DeliveryRequest } from '../models/DeliveryRequest';
+import { env } from '../config/env';
 import { ApiError } from '../utils/ApiError';
 
 export async function holdFunds(matchId: string, amount: number, type: 'carrier_deposit' | 'sender_payment') {
@@ -63,7 +64,7 @@ export async function releaseFunds(matchId: string) {
 
   const depositAmount = trip.safetyDepositAmount || 0;
   const senderPayment = delivery.totalCharge || match.agreedPrice;
-  const platformFee = delivery.platformFee || Math.round((senderPayment * 12) / 100);
+  const platformFee = delivery.platformFee || Math.round((senderPayment * env.PLATFORM_FEE_PERCENT) / 100);
   const payoutToCarrier = delivery.quotedPrice || Math.max(senderPayment - platformFee, 0);
 
   carrier.wallet.escrowHeld = Math.max(0, carrier.wallet.escrowHeld - depositAmount);

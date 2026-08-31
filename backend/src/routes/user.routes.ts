@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  deleteMeController,
   meController,
   publicProfileController,
   updateMeController,
@@ -18,6 +19,7 @@ router.use(userRateLimiter);
 
 router.get('/me', requireAuth, asyncHandler(meController));
 router.put('/me', requireAuth, validate(updateMeSchema), asyncHandler(updateMeController));
+router.delete('/me', requireAuth, asyncHandler(deleteMeController));
 router.post('/me/verify-id', requireAuth, validate(verifyIdSchema), asyncHandler(verifyIdController));
 router.get('/me/wallet', requireAuth, asyncHandler(walletController));
 router.get('/:userId/public', requireAuth, asyncHandler(publicProfileController));

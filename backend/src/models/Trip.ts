@@ -134,6 +134,16 @@ const TripSchema = new Schema<ITrip>(
 );
 
 TripSchema.index({ 'origin.city': 1, 'destination.city': 1, departureTime: 1, status: 1 });
+TripSchema.index({
+  status: 1,
+  safetyDepositPaid: 1,
+  'origin.city': 1,
+  'destination.city': 1,
+  'availableCapacity.allowedCategories': 1,
+  'availableCapacity.weightKg': 1,
+  pricePerKg: 1,
+  departureTime: 1
+});
 TripSchema.index({ carrier: 1, status: 1 });
 TripSchema.index({ 'origin.coordinates': '2dsphere' });
 TripSchema.index({ 'destination.coordinates': '2dsphere' });

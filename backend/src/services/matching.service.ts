@@ -6,7 +6,7 @@ import { DeliveryRequest, IDeliveryRequest } from '../models/DeliveryRequest';
 import { Match } from '../models/Match';
 import { Trip, ITrip } from '../models/Trip';
 import { ApiError } from '../utils/ApiError';
-import { isTransactionUnsupported } from '../utils/mongoTransactions';
+import { isTransactionUnsupported, runInTransaction } from '../utils/mongoTransactions';
 import { calculateQuote } from '../utils/pricing';
 import { scoreTrip } from '../utils/tripMatcher';
 import { emitToTrip, emitToUser, notifyUser } from './notification.service';
@@ -152,7 +152,11 @@ async function retrieveTripsWithRoutingSearch(req: IDeliveryRequest) {
     'availableCapacity.allowedCategories': req.package.category
   }).populate('carrier');
 
-  const validTrips = trips.filter((trip: any) => !trip.carrier._id.equals(req.sender));
+  const validTrips = trips.filter(
+    (trip: any) =>
+      (trip.carrier?._id || trip.carrier)?.toString() !==
+      (req.sender?._id || req.sender)?.toString()
+  );
   if (!validTrips.length) {
     return [];
   }
@@ -349,40 +353,34 @@ async function createMatchProposal(trip: any, req: IDeliveryRequest) {
   }
   const quote = calculateQuote(trip.toObject ? trip.toObject() : trip, req);
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
-    const [match] = await Match.create(
-      [
-        {
-          trip: trip._id,
-          deliveryRequest: reqId,
-          carrier: trip.carrier._id,
-          sender: req.sender,
-          status: 'proposed',
-          agreedPrice: quote.totalCharge,
-          payoutToCarrier: quote.carrierEarning,
-          timeline: [{ event: 'match_proposed', actor: trip.carrier._id, metadata: { totalCharge: quote.totalCharge } }]
-        }
-      ],
-      { session }
-    );
+    const match = await runInTransaction(async (session) => {
+      const [createdMatch] = await Match.create(
+        [
+          {
+            trip: trip._id,
+            deliveryRequest: reqId,
+            carrier: trip.carrier._id,
+            sender: req.sender,
+            status: 'proposed',
+            agreedPrice: quote.totalCharge,
+            payoutToCarrier: quote.carrierEarning,
+            timeline: [{ event: 'match_proposed', actor: trip.carrier._id, metadata: { totalCharge: quote.totalCharge } }]
+          }
+        ],
+        session ? { session } : undefined
+      );
 
-    await Trip.findByIdAndUpdate(trip._id, { $addToSet: { matches: match._id } }, { session });
-    await DeliveryRequest.findByIdAndUpdate(reqId, { $set: { status: 'matched' } }, { session });
-    await appendMatchProposalOutbox(match._id.toString(), trip, req, quote, session);
+      await Trip.findByIdAndUpdate(trip._id, { $addToSet: { matches: createdMatch._id } }, session ? { session } : undefined);
+      await DeliveryRequest.findByIdAndUpdate(reqId, { $set: { status: 'matched' } }, session ? { session } : undefined);
+      await appendMatchProposalOutbox(createdMatch._id.toString(), trip, req, quote, session);
 
-    await session.commitTransaction();
-    session.endSession();
+      return createdMatch;
+    });
 
     await emitMatchProposalCreated(trip, req, reqId, match._id.toString());
-
     return match;
   } catch (error: any) {
-    await session.abortTransaction();
-    session.endSession();
-
     if (error?.code === 11000) {
       const existing = await Match.findOne({ trip: trip._id, deliveryRequest: reqId });
       if (existing) {
@@ -422,10 +420,14 @@ export async function findMatches(deliveryRequestId: string) {
     'availableCapacity.allowedCategories': req.package.category
   }).populate('carrier');
 
-  const validTrips = trips.filter((trip: any) => !trip.carrier._id.equals(req.sender));
+  const validTrips = trips.filter(
+    (trip: any) =>
+      (trip.carrier?._id || trip.carrier)?.toString() !==
+      (req.sender?._id || req.sender)?.toString()
+  );
   const rankedTrips = await rankTripsWithRoutingSearch(req, validTrips);
 
-  if (rankedTrips) {
+  if (rankedTrips && rankedTrips.length > 0) {
     return Promise.all(rankedTrips.slice(0, 5).map((trip) => createMatchProposal(trip, req)));
   }
 

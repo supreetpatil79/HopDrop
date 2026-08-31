@@ -152,4 +152,11 @@ describe('Delivery routes', () => {
       ]
     });
   });
+
+  it('rejects unauthenticated requests with 401', async () => {
+    const response = await request(app).get('/api/v1/deliveries/del_123/matches');
+    expect(response.status).toBe(401);
+    expect(response.body.success).toBe(false);
+    expect(mockedGetRequestMatches).not.toHaveBeenCalled();
+  });
 });

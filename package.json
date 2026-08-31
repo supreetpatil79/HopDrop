@@ -2,9 +2,23 @@
   "name": "hopdrop-monorepo",
   "private": true,
   "scripts": {
+    "build": "npm run build:backend && npm run build:sender && npm run build:carrier && npm run build:services",
+    "build:backend": "npm run build --workspace=backend",
+    "build:sender": "npm run build --workspace=sender-portal",
+    "build:carrier": "npm run build --workspace=carrier-portal",
+    "build:services": "npm run build --workspace=services/realtime-gateway && npm run build --workspace=services/search-indexer && npm run build --workspace=services/matching-orchestrator && npm run build --workspace=services/notification-consumer && npm run build --workspace=services/analytics-pipeline",
+    "seed:docker": "docker compose exec backend npm run seed",
+    "test": "npm run test:backend && npm run test:sender && npm run test:carrier",
+    "test:backend": "npm test --workspace=backend -- --runInBand",
+    "test:sender": "npm test --workspace=sender-portal",
+    "test:carrier": "npm test --workspace=carrier-portal",
+    "audit:backend": "npm audit --workspace=backend --omit=optional --audit-level=high",
+    "audit:portals": "npm audit --workspace=sender-portal --omit=optional --audit-level=moderate && npm audit --workspace=carrier-portal --omit=optional --audit-level=moderate",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "verify:repo": "node ./scripts/check-generated-files.mjs",
+    "verify:platform": "node ./scripts/smoke-platform.mjs"
   },
   "workspaces": [
     "backend",

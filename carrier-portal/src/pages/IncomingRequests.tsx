@@ -1,11 +1,13 @@
+import toast from 'react-hot-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { EmptyState, LoadingState, PageHeader } from 'hopdrop-shared';
 import { MATCH_ACTIVE_STATUSES, formatWorkflowStatus } from 'hopdrop-shared';
 import { Link } from 'react-router-dom';
-import toast from 'react-hot-toast';
 import { matchApi } from '../api/match.api';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { fetchCarrierMatches } from '../utils/matches';
+import { formatINRPaise } from '../utils/format';
 
 export default function IncomingRequests() {
   const queryClient = useQueryClient();
@@ -35,41 +37,72 @@ export default function IncomingRequests() {
   const proposedMatches = matches.filter((match) => match.status === 'proposed');
   const activeMatches = matches.filter((match) => MATCH_ACTIVE_STATUSES.includes(match.status));
 
+  if (matchesQuery.isLoading && !matches.length) {
+    return (
+      <LoadingState
+        title="Loading incoming requests"
+        description="Fetching newly matched sender requests and current delivery handoffs."
+      />
+    );
+  }
+
+  if (matchesQuery.isError && !matches.length) {
+    return (
+      <EmptyState
+        title="We couldn't load incoming requests"
+        description="Refresh the page to reconnect to your latest matched delivery requests."
+      />
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Incoming Requests</h1>
-          <p className="text-sm text-text-muted">Matches created by the sender portal appear here automatically as soon as the backend pairs them to your trip.</p>
-        </div>
-        <a href="/browse-carriers">
-          <Button variant="ghost">Open Sender Match List</Button>
-        </a>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Match queue"
+        title="Incoming Requests"
+        description="Matches created by the sender portal appear here automatically as soon as the backend pairs them to your trip."
+        actions={
+          <a href="/browse-carriers">
+            <Button variant="ghost">Open Sender Match List</Button>
+          </a>
+        }
+      />
 
       {matches.length ? (
         <div className="space-y-4">
-          <Card className="space-y-3">
+          <Card className="space-y-4">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <h2 className="text-lg font-semibold">Awaiting Your Decision</h2>
-                <p className="text-sm text-text-muted">Accept here to hand the match off to sender confirmation and payment-ready pickup.</p>
+                <h2 className="section-title text-lg">Awaiting your decision</h2>
+                <p className="section-copy">Accept here to hand the match off to sender confirmation and payment-ready pickup.</p>
               </div>
               <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">{proposedMatches.length} pending</span>
             </div>
 
             {proposedMatches.length ? (
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2">
                 {proposedMatches.map((match) => (
-                  <Card key={match._id} className="space-y-3 border-primary/20">
+                  <Card key={match._id} className="space-y-4 border-primary/20" interactive>
                     <div>
-                      <p className="font-semibold">{match.deliveryRequest?.origin?.city} → {match.deliveryRequest?.destination?.city}</p>
-                      <p className="text-xs text-text-muted">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-muted">
+                        {match.deliveryRequest?.origin?.city} → {match.deliveryRequest?.destination?.city}
+                      </p>
+                      <p className="mt-2 text-lg font-semibold tracking-[-0.03em] text-dark">
                         {match.deliveryRequest?.package?.description || 'Package request'} · {match.deliveryRequest?.package?.weightKg || '-'} kg
                       </p>
                     </div>
-                    <div className="text-xs text-text-muted">
+                    <div className="text-sm leading-6 text-text-muted">
                       Sender: {match.sender?.name || 'Sender'} · Recipient: {match.deliveryRequest?.recipient?.name || 'Recipient'}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="rounded-2xl border border-border/70 bg-slate-50/80 px-3 py-3">
+                        <p className="text-xs text-text-muted">Your Payout</p>
+                        <p className="mt-1 font-semibold text-dark">{formatINRPaise(match.financials?.payoutToCarrier ?? match.payoutToCarrier)}</p>
+                      </div>
+                      <div className="rounded-2xl border border-border/70 bg-slate-50/80 px-3 py-3">
+                        <p className="text-xs text-text-muted">Payout/kg</p>
+                        <p className="mt-1 font-semibold text-dark">{formatINRPaise(match.financials?.payoutPerKg)}</p>
+                      </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Button
@@ -93,27 +126,31 @@ export default function IncomingRequests() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-text-muted">No new matches are waiting on you right now.</p>
+              <EmptyState title="No new requests waiting on you" description="We'll surface new matched packages here as soon as they arrive." />
             )}
           </Card>
 
-          <Card className="space-y-3">
+          <Card className="space-y-4">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <h2 className="text-lg font-semibold">In Progress</h2>
-                <p className="text-sm text-text-muted">These matches already moved past proposal and should stay in sync with the sender tracker.</p>
+                <h2 className="section-title text-lg">In progress</h2>
+                <p className="section-copy">These matches already moved past proposal and should stay in sync with the sender tracker.</p>
               </div>
               <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">{activeMatches.length} live</span>
             </div>
 
             {activeMatches.length ? (
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2">
                 {activeMatches.map((match) => (
-                  <Card key={match._id} className="space-y-3">
+                  <Card key={match._id} className="space-y-4" interactive>
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="font-semibold">{match.deliveryRequest?.origin?.city} → {match.deliveryRequest?.destination?.city}</p>
-                        <p className="text-xs text-text-muted">{match.deliveryRequest?.package?.description || 'Package request'}</p>
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-muted">
+                          {match.deliveryRequest?.origin?.city} → {match.deliveryRequest?.destination?.city}
+                        </p>
+                        <p className="mt-2 text-lg font-semibold tracking-[-0.03em] text-dark">
+                          {match.deliveryRequest?.package?.description || 'Package request'}
+                        </p>
                       </div>
                       <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                         {formatWorkflowStatus(match.status)}
@@ -123,6 +160,9 @@ export default function IncomingRequests() {
                       <Link to={`/active-delivery/${match._id}`}>
                         <Button>Resume Delivery</Button>
                       </Link>
+                      <span className="inline-flex items-center rounded-xl border border-border/70 bg-slate-50/80 px-3 py-2 text-sm font-semibold text-primary">
+                        {formatINRPaise(match.financials?.payoutToCarrier ?? match.payoutToCarrier)}
+                      </span>
                       <a href={`/track-delivery/${match._id}`}>
                         <Button variant="ghost">Sender Tracker</Button>
                       </a>
@@ -131,14 +171,12 @@ export default function IncomingRequests() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-text-muted">No active delivery handoffs yet.</p>
+              <EmptyState title="No active delivery handoffs yet" description="Accepted matches will move here once pickup, OTP, and live tracking start." />
             )}
           </Card>
         </div>
       ) : (
-        <Card>
-          <p className="text-sm text-text-muted">No incoming matches right now.</p>
-        </Card>
+        <EmptyState title="No incoming matches right now" description="Keep your trips active and this board will populate as soon as the backend pairs a sender request to your route." />
       )}
     </div>
   );

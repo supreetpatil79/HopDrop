@@ -1,0 +1,6 @@
+apiVersion: v2
+name: hopdrop-platform
+description: Cloud-neutral production baseline for the HopDrop platform
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

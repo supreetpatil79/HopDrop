@@ -20,29 +20,25 @@ test('sender can submit a delivery request and see matching trips', async ({ con
 
   await page.goto('/send-package');
 
-  await expect(page.getByRole('heading', { name: 'Send Package' })).toBeVisible();
-  await page.getByRole('spinbutton', { name: 'Weight (kg)' }).fill('2');
-  await page.getByRole('textbox', { name: 'Description' }).fill(`Playwright sender package ${Date.now().toString(36)}`);
-  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByRole('heading', { name: /Send Package|Create a secure delivery request/i })).toBeVisible();
+  await page.getByLabel(/Package weight/i).fill('2');
+  await page.getByLabel(/Package description/i).fill(`Playwright sender package ${Date.now().toString(36)}`);
+  await page.getByRole('button', { name: /Continue|Next/i }).click();
 
-  await selectRouteSuggestion(page, 'Origin City', 'Delh', 'Delhi');
-  await selectRouteSuggestion(page, 'Destination City', 'Dehr', 'Dehradun');
-  await expect(page.getByText(/Map preview is unavailable/i).first()).toBeVisible();
+  await selectRouteSuggestion(page, 'Pickup city', 'Delh', 'Delhi');
+  await selectRouteSuggestion(page, 'Destination city', 'Dehr', 'Dehradun');
+  await expect(page.getByText(/Express Corridor|Pickup|Drop-off/i).first()).toBeVisible();
 
-  await page.getByRole('textbox', { name: 'Recipient Name' }).fill('Receiver One');
-  await page.getByRole('textbox', { name: 'Recipient Phone' }).fill('9876543210');
-  await page.getByRole('textbox', { name: 'Recipient Address' }).fill('Clock Tower, Dehradun');
-  await page.getByLabel('Earliest Pickup').fill(toDateTimeLocal(new Date(Date.now() + 24 * 60 * 60 * 1000)));
-  await page.getByLabel('Latest Pickup').fill(toDateTimeLocal(new Date(Date.now() + 72 * 60 * 60 * 1000)));
-  await page.getByRole('button', { name: 'Next' }).click();
-
-  await expect(page.getByText('Live carrier availability')).toBeVisible();
-  await expect(page.getByText(/verified carrier/i)).toBeVisible();
-  await Promise.all([
-    page.waitForURL(/\/browse-trips\?requestId=/),
-    page.getByRole('button', { name: 'Submit & Find Carriers' }).click({ force: true, noWaitAfter: true })
-  ]);
-  await expect(page.getByRole('heading', { name: 'Browse Matching Trips' })).toBeVisible();
+  await page.getByLabel(/Recipient name/i).fill('Receiver One');
+  await page.getByLabel(/Recipient phone/i).fill('9876543210');
+  await page.getByLabel(/Recipient address/i).fill('Clock Tower, Dehradun');
+  await page.locator('input[name="preferredDeliveryWindow.earliest"]').fill(toDateTimeLocal(new Date(Date.now() + 24 * 60 * 60 * 1000)));
+  await page.locator('input[name="preferredDeliveryWindow.latest"]').fill(toDateTimeLocal(new Date(Date.now() + 72 * 60 * 60 * 1000)));
+  await page.getByRole('button', { name: /Continue|Next/i }).click();
+  await expect(page.getByRole('heading', { name: 'Submission review' })).toBeVisible();
+  await page.getByTestId('submit-package-button').click();
+  await expect(page.getByRole('heading', { name: 'Browse Matching Trips' })).toBeVisible({ timeout: 30000 });
+  await expect(page).toHaveURL(/\/browse-trips\?requestId=/);
   await expect(page.getByRole('button', { name: 'Request Carrier' }).first()).toBeVisible({ timeout: 30000 });
 });
 
@@ -53,27 +49,25 @@ test('carrier can post a trip through the browser flow', async ({ context, page,
 
   await page.goto('/carrier/post-trip');
 
-  await expect(page.getByRole('heading', { name: 'Post Trip' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Post.*Trip|Post a verified delivery route/i })).toBeVisible();
   await selectRouteSuggestion(page, 'Origin City', 'Jai', 'Jaipur');
   await selectRouteSuggestion(page, 'Destination City', 'Koc', 'Kochi');
-  await expect(page.getByText(/Map preview is unavailable/i).first()).toBeVisible();
-  await page.getByRole('button', { name: 'Next →' }).click();
+  await expect(page.getByText(/Express Corridor|Pickup|Drop-off/i).first()).toBeVisible();
+  await page.getByRole('button', { name: /Continue|Next/i }).click();
 
-  await page.getByLabel('Departure Date & Time').fill(toDateTimeLocal(new Date(Date.now() + 48 * 60 * 60 * 1000)));
-  await page.getByLabel('Estimated Arrival (optional)').fill(toDateTimeLocal(new Date(Date.now() + 54 * 60 * 60 * 1000)));
-  await page.getByLabel('Transport Name').fill(`Playwright Kochi Run ${Date.now().toString(36)}`);
-  await page.getByLabel('PNR / Booking Reference').fill(`PW${Date.now().toString(36).slice(-6).toUpperCase()}`);
-  await page.getByRole('button', { name: 'Next →' }).click();
+  await page.getByLabel(/Departure.*Date/i).fill(toDateTimeLocal(new Date(Date.now() + 48 * 60 * 60 * 1000)));
+  await page.getByLabel(/Estimated.*Arrival/i).fill(toDateTimeLocal(new Date(Date.now() + 54 * 60 * 60 * 1000)));
+  await page.getByLabel(/Transport.*Name/i).fill(`Playwright Kochi Run ${Date.now().toString(36)}`);
+  await page.getByLabel(/PNR/i).fill(`PW${Date.now().toString(36).slice(-6).toUpperCase()}`);
+  await page.getByRole('button', { name: /Continue|Next/i }).click();
 
-  await page.getByLabel('Pickup Instructions').fill('Platform 3');
-  await page.getByRole('button', { name: 'Next →' }).click();
+  await page.getByLabel(/Pickup.*Instructions/i).fill('Platform 3');
+  await page.getByRole('button', { name: /Continue|Next/i }).click();
 
-  await expect(page.getByText('TRIP SUMMARY')).toBeVisible();
-  await Promise.all([
-    page.waitForURL(/\/carrier\/my-trips$/),
-    page.getByRole('button', { name: /Pay ₹500 Safety Deposit & Post Trip/i }).click({ force: true, noWaitAfter: true })
-  ]);
-  await expect(page.getByRole('heading', { name: 'My Trips' })).toBeVisible();
+  await expect(page.getByText(/TRIP SUMMARY|Trip summary/i)).toBeVisible();
+  await page.getByRole('button', { name: /Pay.*deposit.*post trip|Pay.*Safety Deposit|Post Trip/i }).click();
+  await expect(page.getByRole('heading', { name: 'My Trips' })).toBeVisible({ timeout: 30000 });
+  await expect(page).toHaveURL(/\/carrier\/my-trips$/);
   await expect(page.getByText('Jaipur → Kochi').first()).toBeVisible();
 });
 
@@ -129,5 +123,4 @@ test('sender and carrier can complete the matched handoff flow across both porta
 
   await senderPage.close();
   await carrierPage.close();
-  await browser.close();
 });

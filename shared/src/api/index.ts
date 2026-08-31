@@ -16,7 +16,10 @@ export interface CreateApiClientOptions<User> {
 }
 
 export function buildApiBaseUrl(apiUrl?: string) {
-  return apiUrl ? `${apiUrl}/api/v1` : '/api/v1';
+  if (apiUrl && !apiUrl.includes('localhost') && !apiUrl.includes('127.0.0.1')) {
+    return `${apiUrl.replace(/\/$/, '')}/api/v1`;
+  }
+  return '/api/v1';
 }
 
 export function createApiClient<User>({
@@ -202,6 +205,34 @@ export function createTripApi(api: AxiosInstance) {
     createPreTripDepositOrder: () => api.post('/trips/deposit-order'),
     payDeposit: (tripId: string) => api.post(`/trips/${tripId}/pay-deposit`),
     confirmDeposit: (tripId: string, payload: any) => api.post(`/trips/${tripId}/confirm-deposit`, payload)
+  };
+}
+
+export function createPricingApi(api: AxiosInstance) {
+  return {
+    estimate: (params: {
+      originCity: string;
+      destinationCity: string;
+      weightKg: number;
+      category?: string;
+      isFragile?: boolean;
+      declaredValue?: number;
+    }) => api.get('/pricing/estimate', { params }),
+    carrierGuidance: (params: {
+      originCity: string;
+      destinationCity: string;
+      capacityKg: number;
+      categories?: string[] | string;
+      pricePerKg?: number;
+      modeOfTransport?: string;
+      departureTime?: string;
+    }) => api.get('/pricing/carrier-guidance', { params })
+  };
+}
+
+export function createJobApi(api: AxiosInstance) {
+  return {
+    available: () => api.get('/jobs/available')
   };
 }
 

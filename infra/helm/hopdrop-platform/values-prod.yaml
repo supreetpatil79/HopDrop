@@ -1,0 +1,16 @@
+global:
+  domain: hopdrop.example.com
+  existingSecret: hopdrop-production-secrets
+
+images:
+  registry: ghcr.io/replace-me
+  pullPolicy: IfNotPresent
+
+services:
+  backend: { replicas: 3 }
+  routingSearch: { replicas: 2 }
+  realtimeGateway: { replicas: 2 }
+
+autoscaling:
+  minReplicas: 2
+  maxReplicas: 20

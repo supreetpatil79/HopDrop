@@ -8,11 +8,15 @@ import { Transaction } from '../models/Transaction';
 import { Trip } from '../models/Trip';
 import { User } from '../models/User';
 import { ApiError } from '../utils/ApiError';
+import { withLock } from '../utils/distributedLock';
+import { injectTraceContext } from '../observability/traceContext';
 import { holdFunds } from './escrow.service';
 import { emitToMatch, emitToUser, notifyUser } from './notification.service';
 import { generateOTP, otpKeys, verifyOTP } from './otp.service';
 import { appendOutboxEvents } from './outbox.service';
 import { bookRapido } from './rapido.service';
+
+
 
 function mapMatchStatusToDeliveryStatus(
   status: string
@@ -128,33 +132,36 @@ export async function getMatchById(matchId: string, userId: string) {
 }
 
 export async function carrierAccept(matchId: string, userId: string) {
-  const match = await Match.findById(matchId);
-  if (!match) {
-    throw new ApiError(404, 'Match not found');
-  }
+  return withLock(`match:accept:${matchId}`, async () => {
+    const match = await Match.findById(matchId);
+    if (!match) {
+      throw new ApiError(404, 'Match not found');
+    }
 
-  if (match.carrier.toString() !== userId) {
-    throw new ApiError(403, 'Forbidden');
-  }
+    if (match.carrier.toString() !== userId) {
+      throw new ApiError(403, 'Forbidden');
+    }
 
-  if (match.status !== 'proposed') {
-    throw new ApiError(400, 'Match already processed');
-  }
+    if (match.status !== 'proposed') {
+      throw new ApiError(400, 'Match already processed');
+    }
 
-  const { match: updated } = await updateMatchStatus(matchId, 'carrier_accepted', match.carrier.toString());
+    const { match: updated } = await updateMatchStatus(matchId, 'carrier_accepted', match.carrier.toString());
 
-  await notifyUser({
-    userId: match.sender,
-    title: 'Carrier Accepted',
-    body: 'A carrier accepted your delivery request. Confirm to proceed.',
-    type: 'match',
-    metadata: { matchId }
+    await notifyUser({
+      userId: match.sender,
+      title: 'Carrier Accepted',
+      body: 'A carrier accepted your delivery request. Confirm to proceed.',
+      type: 'match',
+      metadata: { matchId }
+    });
+
+    await emitToUser(match.sender, 'match:carrier_accepted', { matchId });
+    await emitToMatch(matchId, 'match:carrier_accepted', { matchId });
+    return updated;
   });
-
-  await emitToUser(match.sender, 'match:carrier_accepted', { matchId });
-  await emitToMatch(matchId, 'match:carrier_accepted', { matchId });
-  return updated;
 }
+
 
 export async function carrierReject(matchId: string, userId: string) {
   const match = await Match.findById(matchId);
@@ -361,8 +368,8 @@ export async function verifyDeliveryOtpForMatch(matchId: string, userId: string,
     throw new ApiError(404, 'Match not found');
   }
 
-  if (match.sender.toString() !== userId && match.carrier.toString() !== userId) {
-    throw new ApiError(403, 'Forbidden');
+  if (match.sender.toString() !== userId) {
+    throw new ApiError(403, 'Forbidden: Only the sender or designated recipient can verify the delivery OTP');
   }
 
   await verifyOTP(otpKeys.delivery(matchId), otp);
@@ -390,7 +397,10 @@ export async function verifyDeliveryOtpForMatch(matchId: string, userId: string,
 
   await payoutQueue.add(
     'release-payout',
-    { matchId },
+    {
+      matchId,
+      ...injectTraceContext()
+    },
     {
       delay: env.ESCROW_RELEASE_DELAY_MS,
       removeOnComplete: 100,
@@ -418,6 +428,13 @@ export async function rateMatch(matchId: string, userId: string, input: { score:
   const isCarrier = match.carrier.toString() === userId;
   if (!isSender && !isCarrier) {
     throw new ApiError(403, 'Forbidden');
+  }
+
+  if (isSender && match.rating?.senderRatedCarrier?.at) {
+    throw new ApiError(400, 'You have already submitted a rating for this delivery');
+  }
+  if (isCarrier && match.rating?.carrierRatedSender?.at) {
+    throw new ApiError(400, 'You have already submitted a rating for this sender');
   }
 
   const now = new Date();

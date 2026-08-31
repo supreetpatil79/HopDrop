@@ -29,7 +29,7 @@ export default function Home() {
             <p className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
               Intercity Logistics, Reimagined
             </p>
-            <h1 className="text-3xl font-bold leading-tight md:text-5xl">Uber-style package delivery via real travelers.</h1>
+            <h1 className="text-3xl font-bold leading-tight md:text-5xl">Trusted package delivery through verified travelers.</h1>
             <p className="max-w-lg text-sm text-gray-300 md:text-base">
               If someone is already traveling tonight from your city to your destination, HopDrop lets them safely carry your parcel,
               verified with OTP checkpoints and escrow-backed payments.

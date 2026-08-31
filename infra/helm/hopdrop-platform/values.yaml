@@ -1,0 +1,137 @@
+global:
+  imagePullSecrets: []
+  domain: hopdrop.example.com
+  existingSecret: hopdrop-production-secrets
+  serviceAccountName: hopdrop-platform
+
+images:
+  registry: ghcr.io/replace-me
+  pullPolicy: IfNotPresent
+  backend: hopdrop-backend:latest
+  sender: hopdrop-sender-portal:latest
+  carrier: hopdrop-carrier-portal:latest
+  routingSearch: hopdrop-routing-search:latest
+  realtimeGateway: hopdrop-realtime-gateway:latest
+  searchIndexer: hopdrop-search-indexer:latest
+  matchingOrchestrator: hopdrop-matching-orchestrator:latest
+  notificationConsumer: hopdrop-notification-consumer:latest
+  analyticsPipeline: hopdrop-analytics-pipeline:latest
+
+serviceAccount:
+  create: true
+  annotations: {}
+
+services:
+  sender:
+    replicas: 2
+    port: 80
+    containerPort: 80
+    imageKey: sender
+    path: /
+    resources:
+      requests: { cpu: 100m, memory: 128Mi }
+      limits: { cpu: 500m, memory: 512Mi }
+  carrier:
+    replicas: 2
+    port: 80
+    containerPort: 80
+    imageKey: carrier
+    path: /carrier
+    resources:
+      requests: { cpu: 100m, memory: 128Mi }
+      limits: { cpu: 500m, memory: 512Mi }
+  backend:
+    replicas: 3
+    port: 5000
+    containerPort: 5000
+    imageKey: backend
+    healthPath: /ready
+    resources:
+      requests: { cpu: 250m, memory: 512Mi }
+      limits: { cpu: "2", memory: 2Gi }
+  routingSearch:
+    replicas: 2
+    port: 8010
+    containerPort: 8010
+    imageKey: routingSearch
+    healthPath: /ready
+    resources:
+      requests: { cpu: 250m, memory: 512Mi }
+      limits: { cpu: "1", memory: 1Gi }
+  realtimeGateway:
+    replicas: 2
+    port: 5002
+    containerPort: 5002
+    imageKey: realtimeGateway
+    healthPath: /ready
+    resources:
+      requests: { cpu: 150m, memory: 256Mi }
+      limits: { cpu: "1", memory: 1Gi }
+  searchIndexer:
+    replicas: 1
+    port: 5003
+    containerPort: 5003
+    imageKey: searchIndexer
+    healthPath: /ready
+    resources:
+      requests: { cpu: 100m, memory: 256Mi }
+      limits: { cpu: "1", memory: 1Gi }
+  matchingOrchestrator:
+    replicas: 1
+    port: 5004
+    containerPort: 5004
+    imageKey: matchingOrchestrator
+    healthPath: /ready
+    resources:
+      requests: { cpu: 100m, memory: 256Mi }
+      limits: { cpu: "1", memory: 1Gi }
+  notificationConsumer:
+    replicas: 1
+    port: 5005
+    containerPort: 5005
+    imageKey: notificationConsumer
+    healthPath: /ready
+    resources:
+      requests: { cpu: 100m, memory: 256Mi }
+      limits: { cpu: "1", memory: 1Gi }
+  analyticsPipeline:
+    replicas: 1
+    port: 5006
+    containerPort: 5006
+    imageKey: analyticsPipeline
+    healthPath: /ready
+    resources:
+      requests: { cpu: 100m, memory: 256Mi }
+      limits: { cpu: "1", memory: 1Gi }
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+keda:
+  enabled: false
+  kafka:
+    bootstrapServers: kafka:9092
+    consumerGroupPrefix: hopdrop
+    lagThreshold: "100"
+    activationLagThreshold: "10"
+    authenticationRef: hopdrop-kafka-auth
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+  tlsSecretName: hopdrop-tls
+
+networkPolicy:
+  enabled: true
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1

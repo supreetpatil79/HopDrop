@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { env } from '../config/env';
+import { Match } from '../models/Match';
 import { Transaction } from '../models/Transaction';
 import { User } from '../models/User';
 import { ApiError } from '../utils/ApiError';
@@ -87,4 +88,33 @@ export async function getPublicProfile(userId: string) {
     totalDeliveries: user.totalDeliveries,
     totalTripsAsCarrier: user.totalTripsAsCarrier
   };
+}
+
+export async function deleteMyAccount(userId: string) {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(404, 'User not found');
+  }
+
+  if ((user.wallet?.escrowHeld ?? 0) > 0) {
+    throw new ApiError(400, 'Cannot deactivate account with funds held in escrow. Please complete or cancel pending transactions.');
+  }
+
+  const activeMatchesCount = await Match.countDocuments({
+    $or: [{ carrier: userId }, { sender: userId }],
+    status: { $in: ['proposed', 'accepted', 'confirmed', 'active', 'picked_up'] }
+  });
+
+  if (activeMatchesCount > 0) {
+    throw new ApiError(400, 'Cannot deactivate account with active deliveries or trips in progress.');
+  }
+
+  user.isActive = false;
+  user.fcmToken = undefined;
+  user.refreshTokenHash = undefined;
+  user.name = 'Deactivated User';
+  user.profilePhoto = undefined;
+  await user.save();
+
+  return { success: true, message: 'Account successfully deactivated and personal data anonymized' };
 }

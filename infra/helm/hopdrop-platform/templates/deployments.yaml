@@ -1,0 +1,107 @@
+{{- range $name, $service := .Values.services }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hopdrop.fullname" $ }}-{{ $name | kebabcase }}
+  labels:
+    {{- include "hopdrop.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $name | kebabcase }}
+spec:
+  replicas: {{ $service.replicas }}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ $.Release.Name }}
+      app.kubernetes.io/component: {{ $name | kebabcase }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "hopdrop.name" $ }}
+        app.kubernetes.io/instance: {{ $.Release.Name }}
+        app.kubernetes.io/component: {{ $name | kebabcase }}
+    spec:
+      serviceAccountName: {{ $.Values.global.serviceAccountName }}
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/instance: {{ $.Release.Name }}
+              app.kubernetes.io/component: {{ $name | kebabcase }}
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/instance: {{ $.Release.Name }}
+              app.kubernetes.io/component: {{ $name | kebabcase }}
+      imagePullSecrets:
+        {{- toYaml $.Values.global.imagePullSecrets | nindent 8 }}
+      containers:
+        - name: {{ $name | kebabcase }}
+          image: {{ include "hopdrop.image" (dict "root" $ "key" $service.imageKey) | quote }}
+          imagePullPolicy: {{ $.Values.images.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - name: http
+              containerPort: {{ $service.containerPort }}
+              protocol: TCP
+          {{- if and (ne $name "sender") (ne $name "carrier") }}
+          envFrom:
+            - secretRef:
+                name: {{ $.Values.global.existingSecret }}
+                optional: false
+          {{- end }}
+          resources:
+            {{- toYaml $service.resources | nindent 12 }}
+          {{- if $service.healthPath }}
+          readinessProbe:
+            httpGet:
+              path: {{ $service.healthPath }}
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: {{ $service.healthPath }}
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- else }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          {{- end }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+{{- end }}

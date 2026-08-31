@@ -1,0 +1,35 @@
+{{- if .Values.keda.enabled }}
+{{- range $name := list "matchingOrchestrator" "searchIndexer" "notificationConsumer" "analyticsPipeline" }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ include "hopdrop.fullname" $ }}-{{ $name | kebabcase }}
+  labels:
+    {{- include "hopdrop.labels" $ | nindent 4 }}
+spec:
+  scaleTargetRef:
+    name: {{ include "hopdrop.fullname" $ }}-{{ $name | kebabcase }}
+  minReplicaCount: 1
+  maxReplicaCount: {{ $.Values.autoscaling.maxReplicas }}
+  pollingInterval: 15
+  cooldownPeriod: 300
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleUp:
+          stabilizationWindowSeconds: 30
+        scaleDown:
+          stabilizationWindowSeconds: 180
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: {{ $.Values.keda.kafka.bootstrapServers | quote }}
+        consumerGroup: {{ $.Values.keda.kafka.consumerGroupPrefix }}-{{ $name | kebabcase }}
+        topic: {{ $.Values.global.kafkaTopic | default "hopdrop.events" | quote }}
+        lagThreshold: {{ $.Values.keda.kafka.lagThreshold | quote }}
+        activationLagThreshold: {{ $.Values.keda.kafka.activationLagThreshold | quote }}
+      authenticationRef:
+        name: {{ $.Values.keda.kafka.authenticationRef }}
+---
+{{- end }}
+{{- end }}

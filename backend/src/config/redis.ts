@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';
-import Redis from 'ioredis';
+import Redis, { type RedisOptions } from 'ioredis';
 import { env } from './env';
 
 const cacheUrl = env.REDIS_CACHE_URL || env.REDIS_URL || 'redis://localhost:6379';
@@ -57,23 +57,35 @@ function createTestQueue(): Queue {
   } as unknown as Queue;
 }
 
-export const cacheRedis = isTestEnv
-  ? createTestRedis()
-  : new Redis(cacheUrl, {
-      maxRetriesPerRequest: null,
-      enableReadyCheck: true
-    });
+function createRedisClient(url: string, options: RedisOptions = {}) {
+  if (isTestEnv) {
+    return createTestRedis();
+  }
 
-export const queueConnection = isTestEnv
-  ? createTestRedis()
-  : new Redis(queueUrl, {
-      maxRetriesPerRequest: null
-    });
+  return new Redis(url, {
+    maxRetriesPerRequest: null,
+    ...options
+  });
+}
+
+function createQueue(name: string) {
+  if (isTestEnv) {
+    return createTestQueue();
+  }
+
+  return new Queue(name, { connection: queueConnection });
+}
+
+export const cacheRedis = createRedisClient(cacheUrl, {
+  enableReadyCheck: true
+});
+
+export const queueConnection = createRedisClient(queueUrl);
 
 // Backward-compatible alias for services already importing `redis`.
 export const redis = cacheRedis;
 
-export const matchQueue = isTestEnv ? createTestQueue() : new Queue('matchQueue', { connection: queueConnection });
-export const otpCleanupQueue = isTestEnv ? createTestQueue() : new Queue('otpCleanupQueue', { connection: queueConnection });
-export const payoutQueue = isTestEnv ? createTestQueue() : new Queue('payoutQueue', { connection: queueConnection });
-export const reminderQueue = isTestEnv ? createTestQueue() : new Queue('reminderQueue', { connection: queueConnection });
+export const matchQueue = createQueue('matchQueue');
+export const otpCleanupQueue = createQueue('otpCleanupQueue');
+export const payoutQueue = createQueue('payoutQueue');
+export const reminderQueue = createQueue('reminderQueue');
