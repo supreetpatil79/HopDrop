@@ -47,10 +47,12 @@ const queryClient = new QueryClient({
   }
 });
 
+const senderBasename = typeof window !== 'undefined' && window.location.pathname.startsWith('/sender') ? '/sender' : '';
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter basename={senderBasename}>
         <TelemetryBridge appName="sender-web" />
         <App />
         <Toaster
