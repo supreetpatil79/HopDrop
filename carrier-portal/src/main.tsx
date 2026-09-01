@@ -47,10 +47,12 @@ const queryClient = new QueryClient({
   }
 });
 
+const carrierBasename = typeof window !== 'undefined' && window.location.pathname.startsWith('/carrier') ? '/carrier' : '';
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter basename="/carrier">
+      <BrowserRouter basename={carrierBasename}>
         <TelemetryBridge appName="carrier-web" />
         <App />
         <Toaster
