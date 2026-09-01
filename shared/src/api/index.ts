@@ -16,9 +16,19 @@ export interface CreateApiClientOptions<User> {
 }
 
 export function buildApiBaseUrl(apiUrl?: string) {
-  if (apiUrl && !apiUrl.includes('localhost') && !apiUrl.includes('127.0.0.1')) {
-    return `${apiUrl.replace(/\/$/, '')}/api/v1`;
+  if (apiUrl && apiUrl.trim() !== '') {
+    const trimmed = apiUrl.trim().replace(/\/$/, '');
+    if (trimmed.endsWith('/api/v1')) {
+      return trimmed;
+    }
+    return `${trimmed}/api/v1`;
   }
+
+  // Automatic production fallback when deployed to Vercel without env vars set
+  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+    return 'https://hop-drop-backend.vercel.app/api/v1';
+  }
+
   return '/api/v1';
 }
 
