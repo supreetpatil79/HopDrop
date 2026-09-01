@@ -89,3 +89,5 @@ export const matchQueue = createQueue('matchQueue');
 export const otpCleanupQueue = createQueue('otpCleanupQueue');
 export const payoutQueue = createQueue('payoutQueue');
 export const reminderQueue = createQueue('reminderQueue');
+export const slaRematchQueue = createQueue('slaRematchQueue');
+export const paymentReconcilerQueue = createQueue('paymentReconcilerQueue');

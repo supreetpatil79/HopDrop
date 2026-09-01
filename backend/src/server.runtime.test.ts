@@ -25,7 +25,9 @@ describe('Server runtime factories', () => {
         matchWorker: { close: closeWorker } as any,
         otpCleanupWorker: { close: closeWorker } as any,
         payoutWorker: { close: closeWorker } as any,
-        reminderWorker: { close: closeWorker } as any
+        reminderWorker: { close: closeWorker } as any,
+        slaRematchWorker: { close: closeWorker } as any,
+        paymentReconcilerWorker: { close: closeWorker } as any
       }),
       createShutdownSteps: (server, workers) => [
         {

@@ -103,11 +103,11 @@ const DEMO_CITIES: CandidateDocument[] = [
     normalizedName: 'bengaluru',
     normalizedCity: 'bengaluru',
     normalizedAddress: 'karnataka india',
-    normalizedSearchText: 'bengaluru bengaluru karnataka karnataka india demo blr',
-    nameTokens: ['bengaluru'],
-    cityTokens: ['bengaluru'],
+    normalizedSearchText: 'bengaluru bangalore sbc smvt ypr yeshwantpur majestic kempegowda airport karnataka india demo blr',
+    nameTokens: ['bengaluru', 'bangalore', 'sbc', 'smvt', 'ypr'],
+    cityTokens: ['bengaluru', 'bangalore'],
     addressTokens: ['karnataka', 'india'],
-    searchTokens: ['bengaluru', 'karnataka', 'india', 'demo', 'blr']
+    searchTokens: ['bengaluru', 'bangalore', 'sbc', 'smvt', 'ypr', 'yeshwantpur', 'majestic', 'kempegowda', 'airport', 'karnataka', 'india', 'demo', 'blr']
   },
   {
     placeName: 'Mumbai',
@@ -122,11 +122,11 @@ const DEMO_CITIES: CandidateDocument[] = [
     normalizedName: 'mumbai',
     normalizedCity: 'mumbai',
     normalizedAddress: 'maharashtra india',
-    normalizedSearchText: 'mumbai mumbai maharashtra maharashtra india demo bom',
-    nameTokens: ['mumbai'],
-    cityTokens: ['mumbai'],
+    normalizedSearchText: 'mumbai bombay csmt cst bct mumbai central bandra terminus ltt lokmanya tilak dadar thane airport maharashtra india demo bom',
+    nameTokens: ['mumbai', 'bombay', 'csmt', 'bct', 'ltt'],
+    cityTokens: ['mumbai', 'bombay'],
     addressTokens: ['maharashtra', 'india'],
-    searchTokens: ['mumbai', 'maharashtra', 'india', 'demo', 'bom']
+    searchTokens: ['mumbai', 'bombay', 'csmt', 'cst', 'bct', 'bandra', 'ltt', 'dadar', 'thane', 'airport', 'maharashtra', 'india', 'demo', 'bom']
   },
   {
     placeName: 'Delhi',
@@ -141,11 +141,11 @@ const DEMO_CITIES: CandidateDocument[] = [
     normalizedName: 'delhi',
     normalizedCity: 'delhi',
     normalizedAddress: 'delhi india',
-    normalizedSearchText: 'delhi delhi delhi delhi india demo del',
-    nameTokens: ['delhi'],
-    cityTokens: ['delhi'],
+    normalizedSearchText: 'delhi new delhi ndls dli old delhi nzm hazrat nizamuddin anvt anand vihar igi airport delhi india demo del',
+    nameTokens: ['delhi', 'new delhi', 'ndls', 'nzm', 'dli', 'anvt'],
+    cityTokens: ['delhi', 'new delhi'],
     addressTokens: ['delhi', 'india'],
-    searchTokens: ['delhi', 'india', 'demo']
+    searchTokens: ['delhi', 'new delhi', 'ndls', 'dli', 'nzm', 'hazrat', 'nizamuddin', 'anand', 'vihar', 'anvt', 'igi', 'airport', 'india', 'demo', 'del']
   },
   {
     placeName: 'Dehradun',

@@ -239,6 +239,15 @@ export async function cancelTrip(userId: string, tripId: string) {
     return trip;
   }
 
+  const hasActiveCustodyMatches = await Match.exists({
+    trip: trip._id,
+    status: { $in: ['sender_confirmed', 'active', 'pickup_pending', 'picked_up', 'in_transit', 'delivery_pending'] }
+  });
+
+  if (hasActiveCustodyMatches) {
+    throw new ApiError(400, 'Cannot cancel trip with active deliveries in progress. Please complete or resolve active deliveries first.');
+  }
+
   trip.status = 'cancelled';
   await trip.save();
 

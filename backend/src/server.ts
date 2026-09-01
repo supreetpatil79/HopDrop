@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
 import { createApp } from './app';
 import { connectDB } from './config/db';
 import { env } from './config/env';
-import { cacheRedis, matchQueue, otpCleanupQueue, payoutQueue, queueConnection, reminderQueue } from './config/redis';
+import { cacheRedis, matchQueue, otpCleanupQueue, paymentReconcilerQueue, payoutQueue, queueConnection, reminderQueue, slaRematchQueue } from './config/redis';
 import { logger } from './observability/logger';
 import { shutdownOpenTelemetry } from './observability/openTelemetry';
 import { initServerTelemetry } from './observability/sentry';
@@ -13,6 +13,8 @@ import { createMatchWorker } from './queues/matchQueue';
 import { createOtpCleanupWorker, scheduleOtpCleanupAudit } from './queues/otpCleanup';
 import { createPayoutWorker } from './queues/payoutQueue';
 import { createReminderWorker } from './queues/reminderQueue';
+import { createSlaRematchWorker, scheduleSlaRematchAudit } from './queues/slaRematchQueue';
+import { createPaymentReconcilerWorker, schedulePaymentReconcilerAudit } from './queues/paymentReconcilerQueue';
 import { startOutboxRelay, stopOutboxRelay } from './services/outboxRelay.service';
 
 export type ShutdownStep = {
@@ -30,6 +32,8 @@ export type RuntimeWorkers = {
   otpCleanupWorker: Worker;
   payoutWorker: Worker;
   reminderWorker: Worker;
+  slaRematchWorker: Worker;
+  paymentReconcilerWorker: Worker;
 };
 
 export type ServerRuntimeOptions = {
@@ -86,11 +90,21 @@ export function createShutdownSteps(server: http.Server | null, workers: Partial
     steps.push({ name: 'reminder_worker', run: () => workers.reminderWorker!.close() });
   }
 
+  if (workers.slaRematchWorker) {
+    steps.push({ name: 'sla_rematch_worker', run: () => workers.slaRematchWorker!.close() });
+  }
+
+  if (workers.paymentReconcilerWorker) {
+    steps.push({ name: 'payment_reconciler_worker', run: () => workers.paymentReconcilerWorker!.close() });
+  }
+
   steps.push(
     { name: 'match_queue', run: () => matchQueue.close() },
     { name: 'otp_cleanup_queue', run: () => otpCleanupQueue.close() },
     { name: 'payout_queue', run: () => payoutQueue.close() },
     { name: 'reminder_queue', run: () => reminderQueue.close() },
+    { name: 'sla_rematch_queue', run: () => slaRematchQueue.close() },
+    { name: 'payment_reconciler_queue', run: () => paymentReconcilerQueue.close() },
     { name: 'cache_redis', run: () => cacheRedis.quit() },
     { name: 'queue_redis', run: () => queueConnection.quit() },
     { name: 'mongo', run: () => mongoose.disconnect() },
@@ -124,7 +138,9 @@ export function createServerRuntime(options: ServerRuntimeOptions = {}): ServerR
       matchWorker: createMatchWorker(),
       otpCleanupWorker: createOtpCleanupWorker(),
       payoutWorker: createPayoutWorker(),
-      reminderWorker: createReminderWorker()
+      reminderWorker: createReminderWorker(),
+      slaRematchWorker: createSlaRematchWorker(),
+      paymentReconcilerWorker: createPaymentReconcilerWorker()
     }));
   const buildHttpServer = options.createHttpServer ?? createHttpServer;
   const buildShutdownSteps = options.createShutdownSteps ?? createShutdownSteps;
@@ -144,7 +160,11 @@ export function createServerRuntime(options: ServerRuntimeOptions = {}): ServerR
       await Promise.all([pingCacheRedis(), pingQueueRedis()]);
       await startOutbox();
       workers = createWorkers();
-      await scheduleOtpCleanup();
+      await Promise.all([
+        scheduleOtpCleanup(),
+        scheduleSlaRematchAudit(),
+        schedulePaymentReconcilerAudit()
+      ]);
 
       server = buildHttpServer(app);
       await new Promise<void>((resolve, reject) => {
