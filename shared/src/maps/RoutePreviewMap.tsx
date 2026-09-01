@@ -457,9 +457,58 @@ export function RoutePreviewMap({
                 </>
               )}
 
-              {/* ── ✈️ FLIGHT SCENERY: FLOCK OF HIGH-ALTITUDE BIRDS & RADAR DISH ── */}
+              {/* ── ✈️ FLIGHT SCENERY: ATC TOWER, SURVEILLANCE RADAR, HIGH-ALTITUDE CLOUDS & ATC FREQUENCY ── */}
               {modeData.mode === 'flight' && (
                 <>
+                  {/* Origin Air Traffic Control (ATC) Tower (Left Runway Approach) */}
+                  <div className="absolute top-11 left-[155px] flex flex-col items-center z-10 drop-shadow-xs">
+                    {/* Flashing Red Aviation Obstruction Beacon */}
+                    <span className="h-1.5 w-1.5 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444] animate-ping mb-0.5" />
+                    {/* Lightning / Comms Antenna Mast */}
+                    <div className="w-0.5 h-3 bg-slate-600" />
+                    {/* Glass Control Cab & Concrete Pylon */}
+                    <svg className="w-8 h-12" viewBox="0 0 32 48">
+                      {/* Glass Cab */}
+                      <polygon points="4,8 28,8 24,18 8,18" fill="#0284c7" stroke="#0369a1" strokeWidth="1" />
+                      <line x1="10" y1="8" x2="11" y2="18" stroke="#bae6fd" strokeWidth="0.8" />
+                      <line x1="16" y1="8" x2="16" y2="18" stroke="#bae6fd" strokeWidth="0.8" />
+                      <line x1="22" y1="8" x2="21" y2="18" stroke="#bae6fd" strokeWidth="0.8" />
+                      {/* Walkway Railing Deck */}
+                      <rect x="2" y="18" width="28" height="2.5" fill="#334155" rx="0.5" />
+                      <line x1="3" y1="16.5" x2="29" y2="16.5" stroke="#64748b" strokeWidth="0.6" />
+                      {/* Tapered Concrete Shaft */}
+                      <polygon points="9,20.5 23,20.5 21,46 11,46" fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1" />
+                      {/* Base Facility */}
+                      <rect x="6" y="44" width="20" height="4" fill="#64748b" rx="1" />
+                    </svg>
+                    <div className="rounded bg-sky-950 border border-sky-700 px-1 py-0.2 text-[6.5px] font-mono font-bold text-sky-300 shadow-2xs -mt-1">
+                      ATC TWR
+                    </div>
+                  </div>
+
+                  {/* Destination Primary Surveillance Radar (PSR) Station (Right Approach) */}
+                  <div className="absolute top-11 right-[155px] flex flex-col items-center z-10 drop-shadow-xs">
+                    {/* Rotating Radar Beacon Blip */}
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse mb-0.5" />
+                    <svg className="w-8 h-12" viewBox="0 0 32 48">
+                      {/* Parabolic Radar Dish */}
+                      <path d="M 6 8 Q 16 1 26 8" stroke="#0f172a" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                      <line x1="16" y1="4.5" x2="16" y2="13" stroke="#475569" strokeWidth="1.5" />
+                      {/* Lattice Radar Pylon */}
+                      <polygon points="12,13 20,13 23,44 9,44" fill="#f8fafc" stroke="#94a3b8" strokeWidth="1" />
+                      <line x1="12" y1="20" x2="20" y2="28" stroke="#94a3b8" strokeWidth="0.8" />
+                      <line x1="20" y1="20" x2="12" y2="28" stroke="#94a3b8" strokeWidth="0.8" />
+                      <line x1="11" y1="28" x2="21" y2="36" stroke="#94a3b8" strokeWidth="0.8" />
+                      <line x1="21" y1="28" x2="11" y2="36" stroke="#94a3b8" strokeWidth="0.8" />
+                      {/* Base Station */}
+                      <rect x="6" y="44" width="20" height="4" fill="#334155" rx="1" />
+                    </svg>
+                    <div className="rounded bg-zinc-900 border border-zinc-700 px-1 py-0.2 text-[6.5px] font-mono font-bold text-emerald-400 shadow-2xs -mt-1">
+                      RADAR PSR
+                    </div>
+                  </div>
+
+                  {/* High-Altitude V-Flock of Migrating Birds */}
                   <div className="absolute top-12 left-[32%] flex items-center gap-2 opacity-75 animate-[pulse_4s_ease-in-out_infinite]">
                     <svg className="w-4 h-3 text-slate-600 fill-slate-500" viewBox="0 0 16 12">
                       <path d="M 0 6 Q 4 0 8 6 Q 12 0 16 6 Q 12 4 8 8 Q 4 4 0 6 Z" />
@@ -481,19 +530,30 @@ export function RoutePreviewMap({
                     </svg>
                   </div>
 
-                  <div className="absolute top-6 left-[20%] flex items-center opacity-70 animate-[pulse_4s_ease-in-out_infinite]">
+                  {/* Cirrus & Cumulus Clouds */}
+                  <div className="absolute top-6 left-[22%] flex items-center opacity-70 animate-[pulse_4s_ease-in-out_infinite]">
                     <Cloud className="h-7 w-7 text-sky-200 fill-sky-100/90" />
                   </div>
                   <div className="absolute top-2 left-[48%] flex items-center opacity-80 animate-[pulse_5s_ease-in-out_infinite]">
                     <Cloud className="h-9 w-9 text-sky-200 fill-sky-100/90" />
                   </div>
-                  <div className="absolute top-8 right-[20%] flex items-center opacity-70 animate-[pulse_4.5s_ease-in-out_infinite]">
+                  <div className="absolute top-8 right-[22%] flex items-center opacity-70 animate-[pulse_4.5s_ease-in-out_infinite]">
                     <Cloud className="h-7 w-7 text-sky-200 fill-sky-100/90" />
                   </div>
 
-                  <div className="absolute bottom-14 left-[240px] flex items-center gap-1 rounded bg-sky-100 border border-sky-300 px-1.5 py-0.5 text-[8px] font-bold text-sky-800 shadow-2xs">
-                    <span className="h-1.5 w-1.5 rounded-full bg-sky-500 animate-ping" />
-                    RADAR CORRIDOR FL340
+                  {/* ATC VHF Radio Frequency & Transponder Squawk Callout */}
+                  <div className="absolute bottom-14 left-[185px] flex items-center gap-1.5 rounded-full bg-sky-950/90 border border-sky-500/40 px-2.5 py-0.5 text-[8px] font-mono font-bold text-sky-300 shadow-md backdrop-blur-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+                    <span>ATC 118.1 MHz</span>
+                    <span className="text-sky-500">|</span>
+                    <span className="text-emerald-300">SQUAWK 4321</span>
+                  </div>
+
+                  {/* Airway Vector Corridor & Altitude Clearance Badge */}
+                  <div className="absolute bottom-14 right-[185px] flex items-center gap-1.5 rounded-full bg-slate-900/90 border border-slate-700 px-2.5 py-0.5 text-[8px] font-mono font-bold text-slate-300 shadow-md">
+                    <span className="text-sky-400">✈️ AIRWAY W20</span>
+                    <span className="text-slate-600">•</span>
+                    <span className="text-amber-300">FL340 RADAR CONTACT</span>
                   </div>
                 </>
               )}
