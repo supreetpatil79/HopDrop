@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "build": "npm run build:backend && npm run build:sender && npm run build:carrier && npm run build:services",
+    "build:vercel": "node ./scripts/build-vercel.mjs",
     "build:backend": "npm run build --workspace=backend",
     "build:sender": "npm run build --workspace=sender-portal",
     "build:carrier": "npm run build --workspace=carrier-portal",

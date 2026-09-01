@@ -4,6 +4,7 @@ backend/node_modules/
 frontend/node_modules/
 
 # builds
+dist/
 backend/dist/
 frontend/dist/
 sender-portal/dist/

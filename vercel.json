@@ -1,0 +1,18 @@
+{
+  "buildCommand": "npm run build:vercel",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/carrier/(.*)",
+      "destination": "/carrier/index.html"
+    },
+    {
+      "source": "/carrier",
+      "destination": "/carrier/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
