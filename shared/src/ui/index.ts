@@ -7,5 +7,6 @@ export * from './Modal';
 export * from './QuoteCard';
 export * from './Select';
 export * from './Spinner';
+export * from './StarRating';
 export * from './TextArea';
 export * from './Timeline';

@@ -15,6 +15,7 @@ import SendPackage from './pages/SendPackage';
 import BrowseCarriers from './pages/BrowseCarriers';
 import MyTrips from './pages/MyTrips';
 import MyDeliveries from './pages/MyDeliveries';
+import MyShipments from './pages/MyShipments';
 import TrackDelivery from './pages/TrackDelivery';
 import Profile from './pages/Profile';
 import Wallet from './pages/Wallet';
@@ -126,7 +127,23 @@ export default function App() {
           path="/my-deliveries"
           element={
             <ProtectedRoute>
-              {renderPage(<MyDeliveries />)}
+              {renderPage(<MyShipments />)}
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/shipments"
+          element={
+            <ProtectedRoute>
+              {renderPage(<MyShipments />)}
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/track/:matchId"
+          element={
+            <ProtectedRoute>
+              {renderPage(<TrackDelivery />)}
             </ProtectedRoute>
           }
         />

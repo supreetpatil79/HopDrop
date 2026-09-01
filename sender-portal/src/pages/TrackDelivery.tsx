@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { MATCH_LOCATION_TRACKING_STATUSES, formatWorkflowStatus } from 'hopdrop-shared';
+import { MATCH_LOCATION_TRACKING_STATUSES, StarRating, formatWorkflowStatus } from 'hopdrop-shared';
 import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { matchApi } from '../api/match.api';
@@ -189,6 +189,21 @@ export default function TrackDelivery() {
             )}
           </div>
         </Card>
+      ) : null}
+
+      {match.status === 'delivered' ? (
+        <StarRating
+          recipientName={match.carrier?.name || 'Carrier'}
+          isCarrier={false}
+          onRate={async (ratingData) => {
+            await matchApi.rate(matchId, {
+              score: ratingData.score,
+              comment: ratingData.comment
+            });
+            toast.success('Carrier rated successfully!');
+            queryClient.invalidateQueries({ queryKey: ['trackMatch', matchId] });
+          }}
+        />
       ) : null}
     </div>
   );

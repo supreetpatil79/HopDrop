@@ -8,7 +8,7 @@ import { getCarrierPortalHref } from '../../utils/portal';
 const navItems = [
   { label: 'Send Package', to: '/send-package' },
   { label: 'Browse Carriers', to: '/browse-carriers' },
-  { label: 'My Deliveries', to: '/my-deliveries' }
+  { label: '📦 My Shipments & Tracking', to: '/shipments' }
 ];
 
 function navLinkClass({ isActive }: { isActive: boolean }) {

@@ -12,6 +12,7 @@ import { TextArea } from '../components/ui/TextArea';
 import { MatchTimeline } from '../components/match/MatchTimeline';
 import { LiveMap } from '../components/map/LiveMap';
 import { RoutePreviewMap } from '../components/map/RoutePreviewMap';
+import { StarRating } from 'hopdrop-shared';
 import { useAuth } from '../hooks/useAuth';
 import { useSocket } from '../hooks/useSocket';
 import { ratingSchema } from '../validators/forms';
@@ -224,26 +225,18 @@ export default function MatchDetail() {
         </Card>
 
         {match.status === 'delivered' ? (
-          <Card className="space-y-3">
-            <h2 className="font-semibold">Rate Your Experience</h2>
-            <form
-              className="space-y-2"
-              onSubmit={handleSubmit((values) =>
-                runMutation(
-                  () =>
-                    matchApi.rate(matchId, {
-                      score: Number(values.score),
-                      comment: values.comment
-                    }),
-                  'Rating submitted'
-                ).then(() => reset({ score: 5, comment: '' }))
-              )}
-            >
-              <Input type="number" min={1} max={5} label="Score (1-5)" {...register('score', { valueAsNumber: true })} error={errors.score?.message} />
-              <TextArea label="Comment" {...register('comment')} />
-              <Button type="submit">Submit Rating</Button>
-            </form>
-          </Card>
+          <StarRating
+            recipientName={match.carrier?.name || 'Carrier'}
+            isCarrier={false}
+            onRate={async (ratingData) => {
+              await matchApi.rate(matchId, {
+                score: ratingData.score,
+                comment: ratingData.comment
+              });
+              toast.success('Rating submitted and carrier profile updated!');
+              queryClient.invalidateQueries({ queryKey: ['match', matchId] });
+            }}
+          />
         ) : null}
       </div>
 

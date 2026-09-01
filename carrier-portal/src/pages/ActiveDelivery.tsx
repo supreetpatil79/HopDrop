@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CARRIER_STATUS_GUIDANCE, MATCH_LOCATION_TRACKING_STATUSES, formatWorkflowStatus } from 'hopdrop-shared';
+import { CARRIER_STATUS_GUIDANCE, MATCH_LOCATION_TRACKING_STATUSES, StarRating, formatWorkflowStatus } from 'hopdrop-shared';
 import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { matchApi } from '../api/match.api';
@@ -217,6 +217,21 @@ export default function ActiveDelivery() {
             Share your 6-digit Delivery Code with the recipient upon physical handoff. As soon as the recipient verifies the code on their screen, your payout will be instantly released.
           </p>
         </Card>
+      ) : null}
+
+      {match.status === 'delivered' ? (
+        <StarRating
+          recipientName={match.sender?.name || 'Sender'}
+          isCarrier={true}
+          onRate={async (ratingData) => {
+            await matchApi.rate(matchId, {
+              score: ratingData.score,
+              comment: ratingData.comment
+            });
+            toast.success('Sender rated successfully!');
+            queryClient.invalidateQueries({ queryKey: ['carrier-match', matchId] });
+          }}
+        />
       ) : null}
     </div>
   );
