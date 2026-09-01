@@ -30,7 +30,7 @@ export async function createTrip(userId: string, payload: any) {
       ...payload,
       carrier: userId,
       status: 'active',
-      safetyDepositPaid: false
+      safetyDepositPaid: env.DEMO_MODE ? true : Boolean(payload.safetyDepositPaid)
     });
 
     await trip.save(session ? { session } : undefined);
