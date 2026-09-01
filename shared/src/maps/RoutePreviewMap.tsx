@@ -393,10 +393,8 @@ export function RoutePreviewMap({
                 ═════════════════════════════════════════════════════════════════ */}
             <div className="absolute inset-0 pointer-events-none">
               {/* ── 🚆 TRAIN SCENERY: 3-ASPECT SIGNAL POST & CHAINAGE ── */}
-              {modeData.mode === 'train' && (
-                <>
-                  {/* Indian Railways 3-Aspect Track Signal Post (Green Clear Light) */}
-                  <div className="absolute top-16 left-[165px] flex flex-col items-center z-10">
+                  {/* Indian Railways 3-Aspect Track Signal Post */}
+                  <div className="hidden sm:flex absolute top-16 left-[28%] flex-col items-center z-10">
                     <div className="flex flex-col items-center rounded-sm bg-zinc-900 px-1 py-1 shadow-sm border border-zinc-700">
                       <span className="h-1.5 w-1.5 rounded-full bg-red-950 mb-0.5" />
                       <span className="h-1.5 w-1.5 rounded-full bg-yellow-950 mb-0.5" />
@@ -408,7 +406,7 @@ export function RoutePreviewMap({
                     </div>
                   </div>
 
-                  <div className="absolute top-16 right-[165px] flex flex-col items-center z-10">
+                  <div className="hidden sm:flex absolute top-16 right-[28%] flex-col items-center z-10">
                     <div className="flex flex-col items-center rounded-sm bg-zinc-900 px-1 py-1 shadow-sm border border-zinc-700">
                       <span className="h-1.5 w-1.5 rounded-full bg-red-950 mb-0.5" />
                       <span className="h-1.5 w-1.5 rounded-full bg-yellow-950 mb-0.5" />
@@ -417,45 +415,15 @@ export function RoutePreviewMap({
                     <div className="w-0.5 h-6 bg-zinc-600" />
                   </div>
 
-                  {/* Indian Railways Chainage Milestone Post (KM 342/12) */}
-                  <div className="absolute bottom-14 left-[200px] flex items-center gap-1 rounded bg-yellow-400 border border-zinc-900 px-1.5 py-0.5 text-[8px] font-black text-zinc-950 shadow-2xs">
+                  {/* Indian Railways Chainage Milestone Post */}
+                  <div className="hidden md:flex absolute bottom-14 left-[35%] items-center gap-1 rounded bg-yellow-400 border border-zinc-900 px-1.5 py-0.5 text-[8px] font-black text-zinc-950 shadow-2xs">
                     KM 342/12
                   </div>
 
                   {/* Electrified Rail Corridor Badge */}
-                  <div className="absolute bottom-14 right-[200px] flex items-center gap-1 rounded bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 text-[8px] font-extrabold text-emerald-900 shadow-2xs">
+                  <div className="hidden md:flex absolute bottom-14 right-[35%] items-center gap-1 rounded bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 text-[8px] font-extrabold text-emerald-900 shadow-2xs">
                     ⚡ 25kV AC ELECTRIFIED
                   </div>
-
-                  {/* Top-Left Trees */}
-                  <div className="absolute top-14 left-[205px] flex items-end gap-1 opacity-90">
-                    <svg className="w-4 h-6 text-emerald-600 fill-emerald-500" viewBox="0 0 24 32">
-                      <polygon points="12,2 4,14 8,14 3,22 9,22 9,28 15,28 15,22 21,22 16,14 20,14" />
-                    </svg>
-                  </div>
-
-                  {/* Top-Right Trees */}
-                  <div className="absolute top-14 right-[205px] flex items-end gap-1 opacity-90">
-                    <svg className="w-5 h-7 text-teal-700 fill-teal-600" viewBox="0 0 24 32">
-                      <circle cx="12" cy="11" r="7.5" />
-                      <rect x="10.5" y="18" width="3" height="10" fill="#78350f" />
-                    </svg>
-                  </div>
-
-                  {/* Bottom Trees */}
-                  <div className="absolute bottom-12 left-[260px] flex items-end gap-1.5 opacity-90">
-                    <svg className="w-5 h-7 text-emerald-600 fill-emerald-500" viewBox="0 0 24 32">
-                      <polygon points="12,2 4,14 8,14 3,22 9,22 9,28 15,28 15,22 21,22 16,14 20,14" />
-                    </svg>
-                  </div>
-                  <div className="absolute bottom-12 right-[240px] flex items-end gap-1.5 opacity-90">
-                    <svg className="w-4 h-6 text-green-700 fill-green-600" viewBox="0 0 24 32">
-                      <circle cx="12" cy="10" r="8" />
-                      <rect x="10.5" y="18" width="3" height="10" fill="#78350f" />
-                    </svg>
-                  </div>
-                </>
-              )}
 
               {/* ── ✈️ FLIGHT SCENERY: ATC TOWER, SURVEILLANCE RADAR, HIGH-ALTITUDE CLOUDS & ATC FREQUENCY ── */}
               {modeData.mode === 'flight' && (
@@ -888,13 +856,13 @@ export function RoutePreviewMap({
             </div>
 
             {/* ── CENTER DISTANCE & TELEMETRY CHIP ── */}
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full border border-zinc-200 bg-white/95 px-3.5 py-1 text-xs font-semibold text-zinc-800 shadow-xs backdrop-blur-xs z-10">
-              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-              <span className="font-bold text-zinc-950 tabular-nums">{Math.round(activeStats.distanceKm)} km</span>
+            <div className="absolute top-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-zinc-200/90 bg-white/95 px-3 py-1 text-[11px] font-semibold text-zinc-800 shadow-xs backdrop-blur-xs z-20 whitespace-nowrap">
+              <Sparkles className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+              <span className="font-bold text-zinc-950 tabular-nums">{Math.round(activeStats.distanceKm).toLocaleString('en-IN')} km</span>
               <span className="text-zinc-300">·</span>
-              <span className="text-zinc-600 tabular-nums">~{activeStats.durationHours.toFixed(1)} hrs</span>
+              <span className="text-zinc-600 tabular-nums">~{activeStats.durationHours.toFixed(1)}h</span>
               <span className="text-zinc-300">·</span>
-              <span className="text-xs font-medium text-zinc-600">{modeData.title.split(' ')[0]}</span>
+              <span className="font-medium text-zinc-600">{modeData.title.split(' ')[0]}</span>
             </div>
           </div>
 

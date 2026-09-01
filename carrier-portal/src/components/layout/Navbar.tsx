@@ -96,68 +96,151 @@ export function Navbar() {
         <button
           type="button"
           onClick={() => setMenuOpen((current) => !current)}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-border/80 bg-white/85 text-text shadow-[0_10px_20px_-18px_rgba(15,23,42,0.5)] transition hover:border-primary/25 hover:text-primary md:hidden"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-950 md:hidden"
           aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
           aria-expanded={menuOpen}
         >
-          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {menuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
         </button>
       </div>
 
-      <div className="border-t border-border/60 bg-white/70">
-        <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-text-muted sm:px-6 lg:px-8">
-          <ShieldCheck className="h-4 w-4 text-primary" />
-          Verified routes, secure OTP pickup, and payout-ready delivery operations
+      <div className="border-t border-zinc-100 bg-zinc-50/70">
+        <div className="mx-auto flex max-w-7xl items-center gap-1.5 px-4 py-1.5 text-[11px] font-semibold text-zinc-500 sm:px-6 lg:px-8">
+          <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+          <span className="truncate">Verified routes, secure OTP pickup, and payout-ready delivery operations</span>
         </div>
       </div>
 
       {menuOpen ? (
-        <div className="border-t border-border/70 bg-white/95 px-4 py-4 shadow-[0_18px_32px_-28px_rgba(15,23,42,0.45)] md:hidden">
-          <div className="mx-auto flex max-w-7xl flex-col gap-4">
-            <nav className="flex flex-col gap-2">
-              {navItems.map((item) => (
-                <NavLink key={item.to} className={navLinkClass} to={item.to}>
-                  {item.label}
-                </NavLink>
-              ))}
-            </nav>
-            <div className="flex flex-col gap-2">
-              <a href={getSenderPortalHref(location.pathname)}>
-                <Button variant="ghost" fullWidth>
-                  Sender View
-                </Button>
-              </a>
+        <div className="fixed inset-0 top-[88px] z-50 bg-zinc-950/40 backdrop-blur-sm md:hidden animate-in fade-in duration-150">
+          <div className="flex h-full w-full max-w-xs flex-col justify-between bg-white p-5 shadow-2xl animate-in slide-in-from-left duration-200">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-950 text-xs font-bold text-white">HD</div>
+                  <div>
+                    <p className="text-xs font-bold text-zinc-950">HopDrop Carrier</p>
+                    <p className="text-[10px] text-zinc-400">Traveler Courier Network</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen(false)}
+                  className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <nav className="flex flex-col gap-1">
+                {navItems.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    className={({ isActive }) =>
+                      `flex items-center rounded-xl px-3.5 py-2.5 text-xs font-semibold transition ${
+                        isActive ? 'bg-zinc-950 text-white' : 'text-zinc-700 hover:bg-zinc-100'
+                      }`
+                    }
+                    to={item.to}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
+              </nav>
+
+              <div className="border-t border-zinc-100 pt-3">
+                <a
+                  href={getSenderPortalHref(location.pathname)}
+                  className="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-2.5 text-xs font-semibold text-zinc-800 transition hover:bg-zinc-100"
+                >
+                  <span>Switch to Sender</span>
+                  <span className="text-zinc-400">→</span>
+                </a>
+              </div>
+            </div>
+
+            <div className="border-t border-zinc-100 pt-4">
               {isAuthenticated ? (
-                <>
-                  <Button variant="ghost" fullWidth onClick={() => navigate('/earnings')}>
-                    <Wallet className="h-4 w-4" />
-                    Earnings
-                  </Button>
-                  <Button variant="ghost" fullWidth onClick={() => navigate('/profile')}>
-                    <Truck className="h-4 w-4" />
-                    {user?.name?.split(' ')[0] || 'Profile'}
-                  </Button>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between rounded-xl bg-zinc-50 p-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-200 text-xs font-bold text-zinc-700">
+                        {user?.name?.[0] || 'U'}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-zinc-900">{user?.name || 'Carrier'}</p>
+                        <p className="text-[10px] text-zinc-400">₹{(user?.wallet?.balance || 0).toLocaleString('en-IN')} earnings</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs justify-start"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        navigate('/earnings');
+                      }}
+                    >
+                      <Wallet className="h-3.5 w-3.5 mr-1.5 text-zinc-500" />
+                      Earnings
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs justify-start"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        navigate('/profile');
+                      }}
+                    >
+                      <Truck className="h-3.5 w-3.5 mr-1.5 text-zinc-500" />
+                      Profile
+                    </Button>
+                  </div>
+
                   <Button
                     variant="ghost"
-                    fullWidth
+                    size="sm"
+                    className="w-full text-xs text-rose-600 justify-start hover:bg-rose-50"
                     onClick={() => {
                       clearAuth();
+                      setMenuOpen(false);
                       navigate('/');
                     }}
                   >
-                    <LogOut className="h-4 w-4" />
+                    <LogOut className="h-3.5 w-3.5 mr-1.5" />
                     Logout
                   </Button>
-                </>
+                </div>
               ) : (
-                <>
-                  <Button variant="ghost" fullWidth onClick={() => navigate('/auth/login')}>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navigate('/auth/login');
+                    }}
+                  >
                     Login
                   </Button>
-                  <Button fullWidth onClick={() => navigate('/auth/register')}>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navigate('/auth/register');
+                    }}
+                  >
                     Register
                   </Button>
-                </>
+                </div>
               )}
             </div>
           </div>
