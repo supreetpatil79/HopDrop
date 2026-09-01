@@ -68,11 +68,11 @@ export function createApp(): Express {
   app.use(
     cors({
       origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+        if (!origin || env.DEMO_MODE || allowedOrigins.includes('*') || allowedOrigins.includes(origin) || origin.includes('vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
           callback(null, true);
           return;
         }
-        callback(new Error('CORS origin not allowed'));
+        callback(null, true);
       },
       credentials: true
     })
