@@ -115,7 +115,8 @@ export const deliveryFormSchema = z.object({
           invalid_type_error: 'Weight must be a valid number',
           required_error: 'Weight is required'
         })
-        .min(0.1, 'Weight must be valid')
+        .min(0.1, 'Weight must be at least 0.1 kg')
+        .max(30, 'Weight cannot exceed 30 kg for passenger baggage')
     ),
     dimensionsCm: z
       .object({
@@ -129,9 +130,9 @@ export const deliveryFormSchema = z.object({
     photoUrl: optionalUrl
   }),
   recipient: z.object({
-    name: z.string().min(2),
-    phone: z.string().min(10),
-    address: z.string().min(5)
+    name: z.string().min(2, 'Recipient name must be at least 2 characters'),
+    phone: z.string().min(10, 'Recipient phone must be at least 10 digits'),
+    address: z.string().min(5, 'Recipient address must be at least 5 characters')
   }),
   preferredDeliveryWindow: pickupWindowSchema
 });
