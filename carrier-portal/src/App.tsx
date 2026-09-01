@@ -16,6 +16,7 @@ import ActiveDelivery from './pages/ActiveDelivery';
 import MyTrips from './pages/MyTrips';
 import Profile from './pages/Profile';
 import Earnings from './pages/Earnings';
+import CarrierSetup from './pages/CarrierSetup';
 import NotFound from './pages/NotFound';
 
 export default function App() {
@@ -125,6 +126,22 @@ export default function App() {
           element={
             <ProtectedRoute>
               {renderPage(<Earnings />)}
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/setup"
+          element={
+            <ProtectedRoute>
+              {renderPage(<CarrierSetup />)}
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/verification"
+          element={
+            <ProtectedRoute>
+              {renderPage(<CarrierSetup />)}
             </ProtectedRoute>
           }
         />

@@ -1,10 +1,14 @@
 import { Request, Response } from 'express';
 import {
   deleteMyAccount,
+  getCarrierSetupStatus,
   getMyProfile,
   getPublicProfile,
   getWallet,
+  saveCarrierPayoutMethod,
+  saveCarrierPreferences,
   updateMyProfile,
+  verifyCarrierAadhaarDigiLocker,
   verifyGovernmentId
 } from '../services/user.service';
 import { ApiResponse } from '../utils/ApiResponse';
@@ -27,6 +31,26 @@ export async function deleteMeController(req: Request, res: Response) {
 export async function verifyIdController(req: Request, res: Response) {
   const data = await verifyGovernmentId(req.user!.id, req.body);
   res.status(200).json(new ApiResponse('Government ID verified', data));
+}
+
+export async function verifyCarrierAadhaarController(req: Request, res: Response) {
+  const data = await verifyCarrierAadhaarDigiLocker(req.user!.id, req.body);
+  res.status(200).json(new ApiResponse('Aadhaar verified successfully', data));
+}
+
+export async function saveCarrierPayoutController(req: Request, res: Response) {
+  const data = await saveCarrierPayoutMethod(req.user!.id, req.body);
+  res.status(200).json(new ApiResponse('Payout method updated', data));
+}
+
+export async function saveCarrierPreferencesController(req: Request, res: Response) {
+  const data = await saveCarrierPreferences(req.user!.id, req.body);
+  res.status(200).json(new ApiResponse('Carrier preferences updated', data));
+}
+
+export async function getCarrierSetupStatusController(req: Request, res: Response) {
+  const data = await getCarrierSetupStatus(req.user!.id);
+  res.status(200).json(new ApiResponse('Carrier setup status fetched', data));
 }
 
 export async function walletController(req: Request, res: Response) {

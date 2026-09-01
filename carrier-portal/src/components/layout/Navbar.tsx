@@ -8,7 +8,8 @@ import { getSenderPortalHref } from '../../utils/portal';
 const navItems = [
   { label: 'Post Trip', to: '/post-trip' },
   { label: 'Incoming Requests', to: '/incoming-requests' },
-  { label: 'My Trips', to: '/my-trips' }
+  { label: 'My Trips', to: '/my-trips' },
+  { label: '🛡️ Verification & Setup', to: '/setup' }
 ];
 
 function navLinkClass({ isActive }: { isActive: boolean }) {

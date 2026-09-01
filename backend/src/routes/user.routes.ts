@@ -1,9 +1,13 @@
 import { Router } from 'express';
 import {
   deleteMeController,
+  getCarrierSetupStatusController,
   meController,
   publicProfileController,
+  saveCarrierPayoutController,
+  saveCarrierPreferencesController,
   updateMeController,
+  verifyCarrierAadhaarController,
   verifyIdController,
   walletController
 } from '../controllers/user.controller';
@@ -22,6 +26,13 @@ router.put('/me', requireAuth, validate(updateMeSchema), asyncHandler(updateMeCo
 router.delete('/me', requireAuth, asyncHandler(deleteMeController));
 router.post('/me/verify-id', requireAuth, validate(verifyIdSchema), asyncHandler(verifyIdController));
 router.get('/me/wallet', requireAuth, asyncHandler(walletController));
+
+// ── 🛡️ Carrier Setup & Verification Endpoints ───────────────────────────────
+router.get('/carrier/setup-status', requireAuth, asyncHandler(getCarrierSetupStatusController));
+router.post('/carrier/verify-aadhaar', requireAuth, asyncHandler(verifyCarrierAadhaarController));
+router.post('/carrier/payout-method', requireAuth, asyncHandler(saveCarrierPayoutController));
+router.post('/carrier/preferences', requireAuth, asyncHandler(saveCarrierPreferencesController));
+
 router.get('/:userId/public', requireAuth, asyncHandler(publicProfileController));
 
 export default router;
