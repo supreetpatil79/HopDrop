@@ -16,14 +16,6 @@ export function ConnectionStatusBar() {
       message: 'You are offline. Live delivery updates will resume automatically once your connection returns.',
       className: 'border-red-200/80 bg-red-50/90 text-red-800'
     };
-  } else if (isAuthenticated && status !== 'connected') {
-    banner = {
-      message:
-        status === 'reconnecting' && attempt > 0
-          ? `Realtime connection is recovering. Retry attempt ${attempt}.`
-          : 'Realtime connection is recovering.',
-      className: 'border-amber-200/80 bg-amber-50/90 text-amber-900'
-    };
   }
 
   return (
