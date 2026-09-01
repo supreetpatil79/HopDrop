@@ -34,10 +34,18 @@ function verifySignature(orderId: string, paymentId: string, signature: string):
   return crypto.timingSafeEqual(genBuf, sigBuf);
 }
 
-async function createOrder(amount: number, receipt: string, notes: Record<string, string>) {
+type OrderResult = { id: string; amount: number; currency: string; receipt?: string; notes?: Record<string, string>; status?: string };
+
+async function createOrder(amount: number, receipt: string, notes: Record<string, string>): Promise<OrderResult> {
+  // Lazy-import to avoid a circular import at module load time
+  const { razorpayCreateOrderGuarded } = await import('../config/circuitBreaker');
+
   try {
-    return await razorpay.orders.create({ amount, currency: 'INR', receipt, notes });
-  } catch (error) {
+    // Goes through the circuit breaker — fails fast when Razorpay is down.
+    const order = await razorpayCreateOrderGuarded(razorpay, { amount, currency: 'INR', receipt, notes });
+    return order as OrderResult;
+  } catch (error: any) {
+    // DEMO_MODE fallback: return a mock order so local dev works without keys
     if (env.DEMO_MODE) {
       return {
         id: `mock_order_${Date.now()}`,
@@ -48,7 +56,13 @@ async function createOrder(amount: number, receipt: string, notes: Record<string
         status: 'created'
       };
     }
-    throw new ApiError(502, `Failed to create payment order with provider: ${error instanceof Error ? error.message : String(error)}`);
+    // Distinguish a breaker-open rejection from a real API error
+    const isBreakerOpen = error?.message?.includes('Breaker is open') || error?.code === 'EOPENBREAKER';
+    const statusCode = isBreakerOpen ? 503 : 502;
+    const message = isBreakerOpen
+      ? 'Payment provider is temporarily unavailable. Please try again shortly.'
+      : `Failed to create payment order with provider: ${error instanceof Error ? error.message : String(error)}`;
+    throw new ApiError(statusCode, message);
   }
 }
 

@@ -1,5 +1,5 @@
 import type { ClientSession } from 'mongoose';
-import { OutboxEvent, OutboxEventDocument } from '../models/OutboxEvent';
+import { OutboxEvent, OutboxEventDocument, OUTBOX_RETENTION_SECONDS } from '../models/OutboxEvent';
 import { outboxEventsAppendedTotal } from '../observability/metrics';
 
 export interface AppendOutboxEventInput {
@@ -67,16 +67,21 @@ export async function claimOutboxBatch(limit: number) {
   return claimed;
 }
 
+/** Mark a successfully published event and set its TTL expiry date. */
 export async function markOutboxEventPublished(eventId: string) {
+  const expiresAt = new Date(Date.now() + OUTBOX_RETENTION_SECONDS * 1000);
   await OutboxEvent.findByIdAndUpdate(eventId, {
     $set: {
       status: 'published',
       publishedAt: new Date(),
-      lastError: null
+      lastError: null,
+      // TTL anchor: MongoDB will auto-delete this document after 7 days
+      expiresAt
     }
   });
 }
 
+/** Re-queue a failed event for retry or mark it permanently failed with TTL. */
 export async function releaseOutboxEvent(eventId: string, errorMessage: string, maxAttempts: number) {
   const event = await OutboxEvent.findById(eventId);
 
@@ -88,13 +93,18 @@ export async function releaseOutboxEvent(eventId: string, errorMessage: string, 
   const exhausted = attempts >= maxAttempts;
   const retryDelayMs = Math.min(30000, 1000 * 2 ** Math.max(0, attempts - 1));
 
-  await OutboxEvent.findByIdAndUpdate(eventId, {
-    $set: {
-      status: exhausted ? 'failed' : 'pending',
-      lastError: errorMessage,
-      availableAt: exhausted ? event.availableAt : new Date(Date.now() + retryDelayMs)
-    }
-  });
+  const update: Record<string, unknown> = {
+    status: exhausted ? 'failed' : 'pending',
+    lastError: errorMessage,
+    availableAt: exhausted ? event.availableAt : new Date(Date.now() + retryDelayMs)
+  };
+
+  // Set TTL anchor on permanently failed events so they self-prune after 7 days
+  if (exhausted) {
+    update.expiresAt = new Date(Date.now() + OUTBOX_RETENTION_SECONDS * 1000);
+  }
+
+  await OutboxEvent.findByIdAndUpdate(eventId, { $set: update });
 }
 
 export async function requeueProcessingOutboxEvents() {

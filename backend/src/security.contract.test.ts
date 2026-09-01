@@ -4,6 +4,7 @@ import request from 'supertest';
 import { env } from './config/env';
 import { DeliveryRequest } from './models/DeliveryRequest';
 import { Match } from './models/Match';
+import { ProcessedWebhook } from './models/ProcessedWebhook';
 import { Transaction } from './models/Transaction';
 import { Trip } from './models/Trip';
 import { User } from './models/User';
@@ -211,6 +212,7 @@ describe('Security and Authorization Contract Suite', () => {
         .update(rawPayload)
         .digest('hex');
 
+      jest.spyOn(ProcessedWebhook, 'create').mockResolvedValue({} as any);
       jest.spyOn(Transaction, 'findOne').mockResolvedValue(null);
       jest.spyOn(Transaction, 'findOneAndUpdate').mockResolvedValue({} as any);
 
