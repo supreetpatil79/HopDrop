@@ -81,14 +81,14 @@ export function createApiClient<User>({
         (error.response?.headers?.['X-Request-Id'] as string | undefined);
 
       if (!originalRequest || error.response?.status !== 401 || originalRequest._retry) {
-        if ((statusCode || 500) >= 500) {
+        if (statusCode && statusCode >= 500) {
           onServerError?.('Server error. Please try again.');
           captureClientError(error, {
             source: 'api_response',
             client_name: clientName || 'unknown',
             method: originalRequest?.method || 'unknown',
             path: originalRequest?.url || 'unknown',
-            status_code: statusCode || 'network_error',
+            status_code: statusCode,
             request_id: responseRequestId || null
           });
         } else if (statusCode === 429) {

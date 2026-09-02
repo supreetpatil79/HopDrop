@@ -97,6 +97,10 @@ export function createApp(): Express {
     res.status(200).json({ success: true, message: 'ok', requestId: req.requestId });
   });
 
+  app.get('/api/v1/health', (req, res) => {
+    res.status(200).json({ success: true, message: 'ok', requestId: req.requestId });
+  });
+
   app.get('/ready', (req, res) => {
     const mongoReady = mongoose.connection.readyState === 1;
     const cacheReady = isRedisReady(cacheRedis.status);
