@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Badge, EmptyState, PageHeader, StatCard, captureAnalyticsEvent, captureClientError, trackFunnelStep } from 'hopdrop-shared';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import clsx from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
   Bike,
@@ -420,7 +421,7 @@ export default function PostTrip() {
                   <h3 className="text-lg font-semibold tracking-[-0.02em] text-dark">Transport mode</h3>
                   <p className="text-sm leading-6 text-text-muted">This helps senders understand trust, timing, and handling conditions before they request a match.</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                <div className="grid grid-cols-5 gap-1.5 sm:gap-3">
                   {transportModes.map((mode) => {
                     const Icon = mode.icon;
                     const selected = formData.modeOfTransport === mode.mode;
@@ -434,15 +435,15 @@ export default function PostTrip() {
                           setFormData((previousData) => ({ ...previousData, modeOfTransport: mode.mode }));
                         }}
                         className={[
-                          'rounded-[22px] border px-3 py-4 text-center transition',
+                          'flex flex-col items-center justify-center rounded-2xl border px-1.5 py-3 sm:px-3 sm:py-3.5 text-center transition-all duration-200',
                           selected
-                            ? 'border-primary/40 bg-primary/10 text-primary shadow-[0_18px_35px_-26px_rgba(15,118,110,0.45)]'
-                            : 'border-border/80 bg-white hover:border-primary/20 hover:bg-primary/5'
+                            ? 'border-zinc-950 bg-zinc-950 text-white shadow-md'
+                            : 'border-zinc-200/90 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50'
                         ].join(' ')}
                         aria-pressed={selected}
                       >
-                        <Icon className="mx-auto h-6 w-6" />
-                        <div className="mt-2 text-sm font-semibold">{mode.label}</div>
+                        <Icon className={clsx('h-5 w-5 sm:h-6 sm:w-6 transition-transform', selected ? 'scale-110' : '')} />
+                        <span className="mt-1.5 text-[11px] sm:text-xs font-bold leading-tight">{mode.label}</span>
                       </button>
                     );
                   })}
