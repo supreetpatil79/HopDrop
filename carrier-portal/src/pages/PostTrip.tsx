@@ -421,7 +421,7 @@ export default function PostTrip() {
                   <h3 className="text-lg font-semibold tracking-[-0.02em] text-dark">Transport mode</h3>
                   <p className="text-sm leading-6 text-text-muted">This helps senders understand trust, timing, and handling conditions before they request a match.</p>
                 </div>
-                <div className="grid grid-cols-5 gap-1.5 sm:gap-3">
+                <div className="grid grid-cols-5 gap-2 sm:gap-3">
                   {transportModes.map((mode) => {
                     const Icon = mode.icon;
                     const selected = formData.modeOfTransport === mode.mode;
@@ -435,15 +435,15 @@ export default function PostTrip() {
                           setFormData((previousData) => ({ ...previousData, modeOfTransport: mode.mode }));
                         }}
                         className={[
-                          'flex flex-col items-center justify-center rounded-2xl border px-1.5 py-3 sm:px-3 sm:py-3.5 text-center transition-all duration-200',
+                          'flex flex-col items-center justify-center rounded-[22px] border px-2 py-3.5 sm:px-3 sm:py-4 text-center transition',
                           selected
-                            ? 'border-zinc-950 bg-zinc-950 text-white shadow-md'
-                            : 'border-zinc-200/90 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50'
+                            ? 'border-primary/40 bg-primary/10 text-primary shadow-[0_18px_35px_-26px_rgba(15,118,110,0.45)]'
+                            : 'border-border/80 bg-white hover:border-primary/20 hover:bg-primary/5 text-dark'
                         ].join(' ')}
                         aria-pressed={selected}
                       >
-                        <Icon className={clsx('h-5 w-5 sm:h-6 sm:w-6 transition-transform', selected ? 'scale-110' : '')} />
-                        <span className="mt-1.5 text-[11px] sm:text-xs font-bold leading-tight">{mode.label}</span>
+                        <Icon className="mx-auto h-5 w-5 sm:h-6 sm:w-6" />
+                        <div className="mt-2 text-xs sm:text-sm font-semibold">{mode.label}</div>
                       </button>
                     );
                   })}
