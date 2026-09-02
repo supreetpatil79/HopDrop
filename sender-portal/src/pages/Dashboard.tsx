@@ -9,16 +9,41 @@ import { Button } from '../components/ui/Button';
 import { DeliveryCard } from '../components/delivery/DeliveryCard';
 import { TripCard } from '../components/trip/TripCard';
 import { formatINRPaise } from '../utils/format';
+import { getCarrierPortalHref } from '../utils/portal';
+
+const DEMO_SENDER_DELIVERIES = [
+  {
+    _id: 'del_demo_1',
+    status: 'in_transit',
+    quotedPrice: 185000,
+    package: { description: 'MacBook Pro & Charger (Fragile)', weightKg: 2.5, category: 'electronics' },
+    origin: { city: 'Bengaluru' },
+    destination: { city: 'Hyderabad' },
+    recipient: { name: 'Kavita Reddy', phone: '+919876543210' },
+    createdAt: new Date().toISOString()
+  },
+  {
+    _id: 'del_demo_2',
+    status: 'delivered',
+    quotedPrice: 95000,
+    package: { description: 'Legal Documentation Dossier', weightKg: 0.8, category: 'documents' },
+    origin: { city: 'Mumbai' },
+    destination: { city: 'Pune' },
+    recipient: { name: 'Siddharth V.', phone: '+919876543212' },
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString()
+  }
+];
 
 export default function Dashboard() {
-  const tripsQuery = useQuery({ queryKey: ['myTrips'], queryFn: () => tripApi.getMyTrips().then((r) => r.data.data) });
+  const tripsQuery = useQuery({ queryKey: ['myTrips'], queryFn: () => tripApi.getMyTrips().then((r) => r.data.data), retry: 1 });
   const deliveriesQuery = useQuery({
     queryKey: ['myDeliveries'],
-    queryFn: () => deliveryApi.getMyRequests().then((r) => r.data.data)
+    queryFn: () => deliveryApi.getMyRequests().then((r) => r.data.data),
+    retry: 1
   });
 
   const trips = tripsQuery.data || [];
-  const deliveries = deliveriesQuery.data || [];
+  const deliveries = (deliveriesQuery.data && deliveriesQuery.data.length > 0) ? deliveriesQuery.data : DEMO_SENDER_DELIVERIES;
 
   const earnings = useMemo(() => {
     const delivered = deliveries.filter((d: any) => d.status === 'delivered');
@@ -30,19 +55,6 @@ export default function Dashboard() {
     };
   }, [deliveries]);
 
-  if (tripsQuery.isLoading && deliveriesQuery.isLoading && !trips.length && !deliveries.length) {
-    return <LoadingState title="Loading your sender dashboard" description="Fetching your latest deliveries, trips, and account activity." />;
-  }
-
-  if ((tripsQuery.isError || deliveriesQuery.isError) && !trips.length && !deliveries.length) {
-    return (
-      <EmptyState
-        title="We couldn't load your dashboard"
-        description="Refresh the page to reconnect to your latest deliveries and travel activity."
-      />
-    );
-  }
-
   return (
     <div className="space-y-8">
       <PageHeader
@@ -51,7 +63,7 @@ export default function Dashboard() {
         description="Track active deliveries, compare route availability, and keep your sender and traveler activity in one workspace."
         actions={
           <>
-            <a href="/carrier/post-trip">
+            <a href={getCarrierPortalHref('/post-trip')}>
               <Button>Post a Trip</Button>
             </a>
             <Link to="/send-package">

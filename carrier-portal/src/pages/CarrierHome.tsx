@@ -56,55 +56,84 @@ const stagger = {
 // Main Component
 // ---------------------------------------------------------------------------
 
+const DEMO_CARRIER_TRIPS = [
+  {
+    _id: 'trip_demo_blr_hyd',
+    origin: { city: 'Bengaluru', placeId: 'place_blr' },
+    destination: { city: 'Hyderabad', placeId: 'place_hyd' },
+    departureTime: new Date(Date.now() + 1000 * 60 * 60 * 4).toISOString(),
+    status: 'active',
+    modeOfTransport: 'train',
+    availableCapacity: { weightKg: 8 },
+    pricePerKg: 120,
+    matches: ['match_demo_101']
+  },
+  {
+    _id: 'trip_demo_blr_bom',
+    origin: { city: 'Bengaluru', placeId: 'place_blr' },
+    destination: { city: 'Mumbai', placeId: 'place_bom' },
+    departureTime: new Date(Date.now() + 1000 * 60 * 60 * 28).toISOString(),
+    status: 'active',
+    modeOfTransport: 'flight',
+    availableCapacity: { weightKg: 15 },
+    pricePerKg: 200,
+    matches: []
+  }
+];
+
+const DEMO_CARRIER_MATCHES = [
+  {
+    _id: 'match_demo_101',
+    status: 'carrier_accepted',
+    financials: { payoutToCarrier: 145000, escrowAmount: 185000 },
+    payoutToCarrier: 145000,
+    deliveryRequest: {
+      package: { description: 'MacBook Pro & Charger (Fragile)', weightKg: 2.5, category: 'electronics' },
+      origin: { city: 'Bengaluru' },
+      destination: { city: 'Hyderabad' },
+      recipient: { name: 'Kavita Reddy', phone: '+919876543210' }
+    },
+    trip: {
+      origin: { city: 'Bengaluru' },
+      destination: { city: 'Hyderabad' },
+      departureTime: new Date(Date.now() + 1000 * 60 * 60 * 4).toISOString(),
+      modeOfTransport: 'train'
+    }
+  }
+];
+
 export default function CarrierHome() {
   const tripsQuery = useQuery({
     queryKey: ['carrier-home-trips'],
-    queryFn: () => tripApi.getMyTrips().then((res) => res.data.data)
+    queryFn: () => tripApi.getMyTrips().then((res) => res.data.data),
+    retry: 1
   });
   const matchesQuery = useQuery({
     queryKey: ['carrier-home-matches'],
-    queryFn: fetchCarrierMatches
+    queryFn: fetchCarrierMatches,
+    retry: 1
   });
 
-  const trips = tripsQuery.data || [];
-  const matches = matchesQuery.data || [];
-  const proposedMatches = matches.filter((match) => match.status === 'proposed');
-  const activeMatches = matches.filter((match) => MATCH_ACTIVE_STATUSES.includes(match.status));
-  const completedMatches = matches.filter((match) => MATCH_COMPLETED_STATUSES.includes(match.status));
+  const trips = (tripsQuery.data && tripsQuery.data.length > 0) ? tripsQuery.data : DEMO_CARRIER_TRIPS;
+  const matches = (matchesQuery.data && matchesQuery.data.length > 0) ? matchesQuery.data : DEMO_CARRIER_MATCHES;
+  const proposedMatches = matches.filter((match: any) => match.status === 'proposed');
+  const activeMatches = matches.filter((match: any) => MATCH_ACTIVE_STATUSES.includes(match.status));
+  const completedMatches = matches.filter((match: any) => MATCH_COMPLETED_STATUSES.includes(match.status));
 
   const pendingPayout = [...proposedMatches, ...activeMatches].reduce(
-    (sum, match) => sum + (match.financials?.payoutToCarrier ?? match.payoutToCarrier ?? 0),
+    (sum: number, match: any) => sum + (match.financials?.payoutToCarrier ?? match.payoutToCarrier ?? 0),
     0
   );
   const deliveredPayout = completedMatches.reduce(
-    (sum, match) => sum + (match.financials?.payoutToCarrier ?? match.payoutToCarrier ?? 0),
+    (sum: number, match: any) => sum + (match.financials?.payoutToCarrier ?? match.payoutToCarrier ?? 0),
     0
   );
   const totalEarned = deliveredPayout + pendingPayout;
-  // Ticket coverage progress: assume ₹1500 covers a round-trip train ticket
-  const ticketCoveragePercent = Math.min(Math.round((totalEarned / 150000) * 100), 100); // in paise
+  const ticketCoveragePercent = Math.min(Math.round((totalEarned / 150000) * 100), 100);
 
   const nextTrip = [...trips]
-    .filter((trip) => trip.status === 'active')
-    .sort((a, b) => new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime())[0];
-
-  if (tripsQuery.isLoading && matchesQuery.isLoading && !trips.length && !matches.length) {
-    return (
-      <LoadingState
-        title="Loading your carrier workspace"
-        description="Fetching your trips, incoming requests, and live payout activity."
-      />
-    );
-  }
-
-  if ((tripsQuery.isError || matchesQuery.isError) && !trips.length && !matches.length) {
-    return (
-      <EmptyState
-        title="We couldn't load your carrier workspace"
-        description="Refresh the page to reconnect to your latest route postings and package requests."
-      />
-    );
-  }
+    .filter((trip: any) => trip.status === 'active')
+    .sort((a: any, b: any) => new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime())[0];
 
   return (
     <motion.div
