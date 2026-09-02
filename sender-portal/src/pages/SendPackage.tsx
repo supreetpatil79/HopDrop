@@ -440,26 +440,37 @@ export default function SendPackage() {
                   </div>
                 </div>
 
-                <label className="block rounded-[24px] border border-border/80 bg-surface-alt/80 p-5">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-dark">Special handling</span>
-                        {packageIsFragile ? <Badge tone="warning">Fragile</Badge> : null}
-                      </div>
-                      <p className="text-sm leading-6 text-text-muted">
-                        Flag delicate or high-touch parcels so carriers can opt in with the right expectations.
-                      </p>
+                <div className="flex flex-col gap-4 rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-zinc-900">Special Handling</span>
+                      {packageIsFragile ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-300 px-2 py-0.5 text-[10px] font-bold text-amber-900">
+                          ⚠️ Fragile Item
+                        </span>
+                      ) : null}
                     </div>
-                    <span className="inline-flex items-center gap-3">
-                      <input type="checkbox" className="peer sr-only" {...register('package.isFragile')} />
-                      <span className="relative inline-flex h-7 w-12 items-center rounded-full bg-slate-300 transition peer-checked:bg-primary">
-                        <span className="ml-1 h-5 w-5 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5" />
-                      </span>
-                      <span className="text-sm font-medium text-text">{packageIsFragile ? 'Enabled' : 'Standard handling'}</span>
-                    </span>
+                    <p className="text-xs text-zinc-500">
+                      Flag delicate or high-touch parcels (glass, electronics, cake) so carriers handle with extra care.
+                    </p>
                   </div>
-                </label>
+
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={Boolean(packageIsFragile)}
+                    onClick={() => setValue('package.isFragile', !packageIsFragile, { shouldDirty: true, shouldValidate: true })}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                      packageIsFragile ? 'bg-zinc-950' : 'bg-zinc-200'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                        packageIsFragile ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
             ) : null}
 
