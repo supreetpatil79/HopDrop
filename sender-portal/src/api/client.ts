@@ -11,8 +11,5 @@ export const api = createApiClient<AuthUser>({
     getRefreshToken: () => useAuthStore.getState().refreshToken,
     setAuth: (payload) => useAuthStore.getState().setAuth(payload),
     clearAuth: () => useAuthStore.getState().clearAuth()
-  },
-  onServerError: (message) => {
-    toast.error(message);
   }
 });
