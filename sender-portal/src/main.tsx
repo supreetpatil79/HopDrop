@@ -4,6 +4,8 @@ import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@ta
 import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { captureClientError, createTelemetryBridge, initClientTelemetry } from 'hopdrop-shared';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import App from './App';
 import { useAuth } from './hooks/useAuth';
 import './index.css';
@@ -55,6 +57,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <BrowserRouter basename={senderBasename}>
         <TelemetryBridge appName="sender-web" />
         <App />
+        <Analytics />
+        <SpeedInsights />
         <Toaster
           position="top-right"
           gutter={12}
