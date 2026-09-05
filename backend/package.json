@@ -11,6 +11,7 @@
     "start": "node dist/bootstrap.js",
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
+    "test:db": "ts-node src/scripts/test-db.ts",
     "seed": "ts-node src/scripts/seed.ts"
   },
   "dependencies": {
