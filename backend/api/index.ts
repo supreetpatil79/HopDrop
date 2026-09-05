@@ -33,7 +33,7 @@ export default async function handler(req: any, res: any) {
     return res.status(500).json({
       success: false,
       message: 'Internal server error',
-      error: err?.message || String(err)
+      ...(process.env.NODE_ENV === 'development' && { error: err?.message || String(err) })
     });
   }
 }
