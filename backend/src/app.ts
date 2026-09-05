@@ -29,29 +29,34 @@ function isRedisReady(status: string) {
 }
 
 function createBullBoardRouter(): Router | null {
-  if (env.NODE_ENV === 'test') {
+  if (env.NODE_ENV === 'test' || process.env.VERCEL === '1' || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME)) {
     return null;
   }
 
-  const { createBullBoard } = require('@bull-board/api');
-  const { BullMQAdapter } = require('@bull-board/api/bullMQAdapter');
-  const { ExpressAdapter } = require('@bull-board/express');
-  const bullBoardAdapter = new ExpressAdapter();
-  const router = express.Router();
+  try {
+    const { createBullBoard } = require('@bull-board/api');
+    const { BullMQAdapter } = require('@bull-board/api/bullMQAdapter');
+    const { ExpressAdapter } = require('@bull-board/express');
+    const bullBoardAdapter = new ExpressAdapter();
+    const router = express.Router();
 
-  bullBoardAdapter.setBasePath('/admin/queues');
-  createBullBoard({
-    queues: [
-      new BullMQAdapter(matchQueue),
-      new BullMQAdapter(otpCleanupQueue),
-      new BullMQAdapter(payoutQueue),
-      new BullMQAdapter(reminderQueue)
-    ],
-    serverAdapter: bullBoardAdapter
-  });
+    bullBoardAdapter.setBasePath('/admin/queues');
+    createBullBoard({
+      queues: [
+        new BullMQAdapter(matchQueue),
+        new BullMQAdapter(otpCleanupQueue),
+        new BullMQAdapter(payoutQueue),
+        new BullMQAdapter(reminderQueue)
+      ],
+      serverAdapter: bullBoardAdapter
+    });
 
-  router.use('/', bullBoardAdapter.getRouter());
-  return router;
+    router.use('/', bullBoardAdapter.getRouter());
+    return router;
+  } catch (err) {
+    console.warn('BullBoard initialization skipped:', err);
+    return null;
+  }
 }
 
 export function createApp(): Express {

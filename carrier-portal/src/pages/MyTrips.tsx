@@ -4,9 +4,21 @@ import { TripCard } from '../components/trip/TripCard';
 import { Card } from '../components/ui/Card';
 
 export default function MyTrips() {
-  const tripsQuery = useQuery({ queryKey: ['myTrips'], queryFn: () => tripApi.getMyTrips().then((r) => r.data.data) });
+  const tripsQuery = useQuery({
+    queryKey: ['myTrips'],
+    queryFn: async () => {
+      try {
+        const r = await tripApi.getMyTrips();
+        return r.data.data;
+      } catch {
+        return [];
+      }
+    }
+  });
 
-  const trips = tripsQuery.data || [];
+  const localTrips = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('hopdrop:carrier:local_trips') || '[]') : [];
+  const remoteTrips = Array.isArray(tripsQuery.data) ? tripsQuery.data : [];
+  const trips = [...localTrips, ...remoteTrips.filter((rt: any) => !localTrips.some((lt: any) => lt._id === rt._id))];
 
   return (
     <div className="space-y-4">

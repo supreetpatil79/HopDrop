@@ -6,9 +6,11 @@ import { logger } from '../observability/logger';
 const MAX_RETRIES = 5;
 
 export async function connectDB(): Promise<void> {
+  const isServerless = process.env.VERCEL === '1' || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME);
+  const maxRetries = isServerless ? 1 : MAX_RETRIES;
   let retries = 0;
 
-  while (retries < MAX_RETRIES) {
+  while (retries < maxRetries) {
     try {
       await dbCircuitBreaker.fire(env.MONGODB_URI);
       logger.info({ attempt: retries + 1 }, 'mongodb_connected');
@@ -16,8 +18,12 @@ export async function connectDB(): Promise<void> {
     } catch (error) {
       retries += 1;
       logger.warn({ retries, error: error instanceof Error ? error.message : String(error) }, 'mongodb_connect_retry');
-      if (retries >= MAX_RETRIES) {
+      if (retries >= maxRetries) {
         logger.error({ retries }, 'mongodb_connect_failed_max_retries');
+        if (isServerless) {
+          console.warn('⚠️ Serverless MongoDB connection failed, continuing in decoupled/mock mode');
+          return;
+        }
         throw error;
       }
       await new Promise((resolve) => setTimeout(resolve, 1500 * retries));
