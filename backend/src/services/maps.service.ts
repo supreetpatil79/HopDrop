@@ -89,247 +89,6 @@ type ClickSignals = {
   queryClicks: number;
 };
 
-const DEMO_CITIES: CandidateDocument[] = [
-  {
-    placeName: 'Bengaluru',
-    placeAddress: 'Karnataka, India',
-    eLoc: 'DEMO_BLR',
-    latitude: 12.9716,
-    longitude: 77.5946,
-    city: 'Bengaluru',
-    state: 'Karnataka',
-    source: 'demo',
-    sourceOrder: 0,
-    normalizedName: 'bengaluru',
-    normalizedCity: 'bengaluru',
-    normalizedAddress: 'karnataka india',
-    normalizedSearchText: 'bengaluru bangalore sbc smvt ypr yeshwantpur majestic kempegowda airport karnataka india demo blr',
-    nameTokens: ['bengaluru', 'bangalore', 'sbc', 'smvt', 'ypr'],
-    cityTokens: ['bengaluru', 'bangalore'],
-    addressTokens: ['karnataka', 'india'],
-    searchTokens: ['bengaluru', 'bangalore', 'sbc', 'smvt', 'ypr', 'yeshwantpur', 'majestic', 'kempegowda', 'airport', 'karnataka', 'india', 'demo', 'blr']
-  },
-  {
-    placeName: 'Mumbai',
-    placeAddress: 'Maharashtra, India',
-    eLoc: 'DEMO_BOM',
-    latitude: 19.076,
-    longitude: 72.8777,
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    source: 'demo',
-    sourceOrder: 1,
-    normalizedName: 'mumbai',
-    normalizedCity: 'mumbai',
-    normalizedAddress: 'maharashtra india',
-    normalizedSearchText: 'mumbai bombay csmt cst bct mumbai central bandra terminus ltt lokmanya tilak dadar thane airport maharashtra india demo bom',
-    nameTokens: ['mumbai', 'bombay', 'csmt', 'bct', 'ltt'],
-    cityTokens: ['mumbai', 'bombay'],
-    addressTokens: ['maharashtra', 'india'],
-    searchTokens: ['mumbai', 'bombay', 'csmt', 'cst', 'bct', 'bandra', 'ltt', 'dadar', 'thane', 'airport', 'maharashtra', 'india', 'demo', 'bom']
-  },
-  {
-    placeName: 'Delhi',
-    placeAddress: 'Delhi, India',
-    eLoc: 'DEMO_DEL',
-    latitude: 28.6139,
-    longitude: 77.209,
-    city: 'Delhi',
-    state: 'Delhi',
-    source: 'demo',
-    sourceOrder: 2,
-    normalizedName: 'delhi',
-    normalizedCity: 'delhi',
-    normalizedAddress: 'delhi india',
-    normalizedSearchText: 'delhi new delhi ndls dli old delhi nzm hazrat nizamuddin anvt anand vihar igi airport delhi india demo del',
-    nameTokens: ['delhi', 'new delhi', 'ndls', 'nzm', 'dli', 'anvt'],
-    cityTokens: ['delhi', 'new delhi'],
-    addressTokens: ['delhi', 'india'],
-    searchTokens: ['delhi', 'new delhi', 'ndls', 'dli', 'nzm', 'hazrat', 'nizamuddin', 'anand', 'vihar', 'anvt', 'igi', 'airport', 'india', 'demo', 'del']
-  },
-  {
-    placeName: 'Dehradun',
-    placeAddress: 'Uttarakhand, India',
-    eLoc: 'DEMO_DDN',
-    latitude: 30.3165,
-    longitude: 78.0322,
-    city: 'Dehradun',
-    state: 'Uttarakhand',
-    source: 'demo',
-    sourceOrder: 3,
-    normalizedName: 'dehradun',
-    normalizedCity: 'dehradun',
-    normalizedAddress: 'uttarakhand india',
-    normalizedSearchText: 'dehradun dehradun uttarakhand uttarakhand india demo ddn',
-    nameTokens: ['dehradun'],
-    cityTokens: ['dehradun'],
-    addressTokens: ['uttarakhand', 'india'],
-    searchTokens: ['dehradun', 'uttarakhand', 'india', 'demo', 'ddn']
-  },
-  {
-    placeName: 'Hyderabad',
-    placeAddress: 'Telangana, India',
-    eLoc: 'DEMO_HYD',
-    latitude: 17.385,
-    longitude: 78.4867,
-    city: 'Hyderabad',
-    state: 'Telangana',
-    source: 'demo',
-    sourceOrder: 4,
-    normalizedName: 'hyderabad',
-    normalizedCity: 'hyderabad',
-    normalizedAddress: 'telangana india',
-    normalizedSearchText: 'hyderabad hyderabad telangana telangana india demo hyd',
-    nameTokens: ['hyderabad'],
-    cityTokens: ['hyderabad'],
-    addressTokens: ['telangana', 'india'],
-    searchTokens: ['hyderabad', 'telangana', 'india', 'demo', 'hyd']
-  },
-  {
-    placeName: 'Pune',
-    placeAddress: 'Maharashtra, India',
-    eLoc: 'DEMO_PNQ',
-    latitude: 18.5204,
-    longitude: 73.8567,
-    city: 'Pune',
-    state: 'Maharashtra',
-    source: 'demo',
-    sourceOrder: 5,
-    normalizedName: 'pune',
-    normalizedCity: 'pune',
-    normalizedAddress: 'maharashtra india',
-    normalizedSearchText: 'pune pune maharashtra maharashtra india demo pnq',
-    nameTokens: ['pune'],
-    cityTokens: ['pune'],
-    addressTokens: ['maharashtra', 'india'],
-    searchTokens: ['pune', 'maharashtra', 'india', 'demo', 'pnq']
-  },
-  {
-    placeName: 'Chennai',
-    placeAddress: 'Tamil Nadu, India',
-    eLoc: 'DEMO_MAA',
-    latitude: 13.0827,
-    longitude: 80.2707,
-    city: 'Chennai',
-    state: 'Tamil Nadu',
-    source: 'demo',
-    sourceOrder: 6,
-    normalizedName: 'chennai',
-    normalizedCity: 'chennai',
-    normalizedAddress: 'tamil nadu india',
-    normalizedSearchText: 'chennai chennai tamil nadu tamil nadu india demo maa',
-    nameTokens: ['chennai'],
-    cityTokens: ['chennai'],
-    addressTokens: ['tamil', 'nadu', 'india'],
-    searchTokens: ['chennai', 'tamil', 'nadu', 'india', 'demo', 'maa']
-  },
-  {
-    placeName: 'Chandigarh',
-    placeAddress: 'Chandigarh, India',
-    eLoc: 'DEMO_IXC',
-    latitude: 30.7333,
-    longitude: 76.7794,
-    city: 'Chandigarh',
-    state: 'Chandigarh',
-    source: 'demo',
-    sourceOrder: 7,
-    normalizedName: 'chandigarh',
-    normalizedCity: 'chandigarh',
-    normalizedAddress: 'chandigarh india',
-    normalizedSearchText: 'chandigarh chandigarh chandigarh chandigarh india demo ixc',
-    nameTokens: ['chandigarh'],
-    cityTokens: ['chandigarh'],
-    addressTokens: ['chandigarh', 'india'],
-    searchTokens: ['chandigarh', 'india', 'demo', 'ixc']
-  },
-  {
-    placeName: 'Kolkata',
-    placeAddress: 'West Bengal, India',
-    eLoc: 'DEMO_CCU',
-    latitude: 22.5726,
-    longitude: 88.3639,
-    city: 'Kolkata',
-    state: 'West Bengal',
-    source: 'demo',
-    sourceOrder: 8,
-    normalizedName: 'kolkata',
-    normalizedCity: 'kolkata',
-    normalizedAddress: 'west bengal india',
-    normalizedSearchText: 'kolkata kolkata west bengal west bengal india demo ccu',
-    nameTokens: ['kolkata'],
-    cityTokens: ['kolkata'],
-    addressTokens: ['west', 'bengal', 'india'],
-    searchTokens: ['kolkata', 'west', 'bengal', 'india', 'demo', 'ccu']
-  },
-  {
-    placeName: 'Ahmedabad',
-    placeAddress: 'Gujarat, India',
-    eLoc: 'DEMO_AMD',
-    latitude: 23.0225,
-    longitude: 72.5714,
-    city: 'Ahmedabad',
-    state: 'Gujarat',
-    source: 'demo',
-    sourceOrder: 9,
-    normalizedName: 'ahmedabad',
-    normalizedCity: 'ahmedabad',
-    normalizedAddress: 'gujarat india',
-    normalizedSearchText: 'ahmedabad ahmedabad gujarat gujarat india demo amd',
-    nameTokens: ['ahmedabad'],
-    cityTokens: ['ahmedabad'],
-    addressTokens: ['gujarat', 'india'],
-    searchTokens: ['ahmedabad', 'gujarat', 'india', 'demo', 'amd']
-  },
-  {
-    placeName: 'Jaipur',
-    placeAddress: 'Rajasthan, India',
-    eLoc: 'DEMO_JAI',
-    latitude: 26.9124,
-    longitude: 75.7873,
-    city: 'Jaipur',
-    state: 'Rajasthan',
-    source: 'demo',
-    sourceOrder: 10,
-    normalizedName: 'jaipur',
-    normalizedCity: 'jaipur',
-    normalizedAddress: 'rajasthan india',
-    normalizedSearchText: 'jaipur jaipur rajasthan rajasthan india demo jai',
-    nameTokens: ['jaipur'],
-    cityTokens: ['jaipur'],
-    addressTokens: ['rajasthan', 'india'],
-    searchTokens: ['jaipur', 'rajasthan', 'india', 'demo', 'jai']
-  },
-  {
-    placeName: 'Kochi',
-    placeAddress: 'Kerala, India',
-    eLoc: 'DEMO_COK',
-    latitude: 9.9312,
-    longitude: 76.2673,
-    city: 'Kochi',
-    state: 'Kerala',
-    source: 'demo',
-    sourceOrder: 11,
-    normalizedName: 'kochi',
-    normalizedCity: 'kochi',
-    normalizedAddress: 'kerala india',
-    normalizedSearchText: 'kochi kochi kerala kerala india demo cok',
-    nameTokens: ['kochi'],
-    cityTokens: ['kochi'],
-    addressTokens: ['kerala', 'india'],
-    searchTokens: ['kochi', 'kerala', 'india', 'demo', 'cok']
-  }
-];
-
-function useDemoMaps(): boolean {
-  if (!env.DEMO_MODE) {
-    return false;
-  }
-
-  const clientId = env.MMI_CLIENT_ID.toLowerCase();
-  const clientSecret = env.MMI_CLIENT_SECRET.toLowerCase();
-  return clientId.includes('dummy') || clientSecret.includes('dummy') || !clientId || !clientSecret;
-}
-
 function normalizeText(value: string | null | undefined): string {
   if (!value) {
     return '';
@@ -345,6 +104,97 @@ function normalizeText(value: string | null | undefined): string {
 
 function tokenizeText(value: string | null | undefined): string[] {
   return (normalizeText(value).match(TOKEN_PATTERN) || []).filter((token) => token.length >= 2);
+}
+
+function buildCandidate(
+  placeName: string,
+  placeAddress: string,
+  city: string,
+  state: string,
+  eLoc: string,
+  latitude: number,
+  longitude: number,
+  sourceOrder: number,
+  aliasTokens: string[] = []
+): CandidateDocument {
+  const searchParts = [placeName, city, state, placeAddress, eLoc, ...aliasTokens];
+  return {
+    placeName,
+    placeAddress,
+    eLoc,
+    latitude,
+    longitude,
+    city,
+    state,
+    source: 'demo',
+    sourceOrder,
+    normalizedName: normalizeText(placeName),
+    normalizedCity: normalizeText(city),
+    normalizedAddress: normalizeText(placeAddress),
+    normalizedSearchText: normalizeText(searchParts.join(' ')),
+    nameTokens: tokenizeText(placeName),
+    cityTokens: tokenizeText(city),
+    addressTokens: tokenizeText(`${placeAddress} ${state}`),
+    searchTokens: tokenizeText(searchParts.join(' '))
+  };
+}
+
+const DEMO_CITIES: CandidateDocument[] = [
+  buildCandidate('Bengaluru', 'Bengaluru, Karnataka, India', 'Bengaluru', 'Karnataka', 'DEMO_BLR', 12.9716, 77.5946, 0, ['bangalore', 'sbc', 'smvt', 'ypr', 'majestic', 'kempegowda', 'airport', 'blr']),
+  buildCandidate('Mumbai', 'Mumbai, Maharashtra, India', 'Mumbai', 'Maharashtra', 'DEMO_BOM', 19.076, 72.8777, 1, ['bombay', 'csmt', 'cst', 'bct', 'mumbai central', 'bandra', 'ltt', 'dadar', 'thane', 'airport', 'bom']),
+  buildCandidate('Delhi', 'New Delhi, Delhi, India', 'Delhi', 'Delhi', 'DEMO_DEL', 28.6139, 77.209, 2, ['new delhi', 'ndls', 'dli', 'old delhi', 'nzm', 'hazrat nizamuddin', 'anvt', 'anand vihar', 'igi', 'airport', 'del']),
+  buildCandidate('Hyderabad', 'Hyderabad, Telangana, India', 'Hyderabad', 'Telangana', 'DEMO_HYD', 17.385, 78.4867, 3, ['secunderabad', 'sc', 'rgia', 'shamshabad', 'hyd']),
+  buildCandidate('Pune', 'Pune, Maharashtra, India', 'Pune', 'Maharashtra', 'DEMO_PNQ', 18.5204, 73.8567, 4, ['poona', 'shivajinagar', 'pnq']),
+  buildCandidate('Chennai', 'Chennai, Tamil Nadu, India', 'Chennai', 'Tamil Nadu', 'DEMO_MAA', 13.0827, 80.2707, 5, ['madras', 'mas', 'ms', 'central', 'egmore', 'maa']),
+  buildCandidate('Kolkata', 'Kolkata, West Bengal, India', 'Kolkata', 'West Bengal', 'DEMO_CCU', 22.5726, 88.3639, 6, ['calcutta', 'howrah', 'hwh', 'sealdah', 'sda', 'dumdum', 'ccu']),
+  buildCandidate('Ahmedabad', 'Ahmedabad, Gujarat, India', 'Ahmedabad', 'Gujarat', 'DEMO_AMD', 23.0225, 72.5714, 7, ['adi', 'sabarmati', 'gandhinagar', 'amd']),
+  buildCandidate('Jaipur', 'Jaipur, Rajasthan, India', 'Jaipur', 'Rajasthan', 'DEMO_JAI', 26.9124, 75.7873, 8, ['pink city', 'jp', 'jai']),
+  buildCandidate('Kochi', 'Kochi, Kerala, India', 'Kochi', 'Kerala', 'DEMO_COK', 9.9312, 76.2673, 9, ['cochin', 'ernakulam', 'ers', 'cok']),
+  buildCandidate('Chandigarh', 'Chandigarh, Punjab/Haryana, India', 'Chandigarh', 'Chandigarh', 'DEMO_IXC', 30.7333, 76.7794, 10, ['mohali', 'panchkula', 'ixc']),
+  buildCandidate('Lucknow', 'Lucknow, Uttar Pradesh, India', 'Lucknow', 'Uttar Pradesh', 'DEMO_LKO', 26.8467, 80.9462, 11, ['charbagh', 'lko']),
+  buildCandidate('Surat', 'Surat, Gujarat, India', 'Surat', 'Gujarat', 'DEMO_STV', 21.1702, 72.8311, 12, ['stv']),
+  buildCandidate('Indore', 'Indore, Madhya Pradesh, India', 'Indore', 'Madhya Pradesh', 'DEMO_IDR', 22.7196, 75.8577, 13, ['idr']),
+  buildCandidate('Bhopal', 'Bhopal, Madhya Pradesh, India', 'Bhopal', 'Madhya Pradesh', 'DEMO_BHO', 23.2599, 77.4126, 14, ['habibganj', 'rani kamlapati', 'bho']),
+  buildCandidate('Nagpur', 'Nagpur, Maharashtra, India', 'Nagpur', 'Maharashtra', 'DEMO_NAG', 21.1458, 79.0882, 15, ['nag']),
+  buildCandidate('Visakhapatnam', 'Visakhapatnam, Andhra Pradesh, India', 'Visakhapatnam', 'Andhra Pradesh', 'DEMO_VTZ', 17.6868, 83.2185, 16, ['vizag', 'vtz']),
+  buildCandidate('Patna', 'Patna, Bihar, India', 'Patna', 'Bihar', 'DEMO_PAT', 25.5941, 85.1376, 17, ['pnbe', 'pat']),
+  buildCandidate('Vadodara', 'Vadodara, Gujarat, India', 'Vadodara', 'Gujarat', 'DEMO_BDQ', 22.3072, 73.1812, 18, ['baroda', 'brc', 'bdq']),
+  buildCandidate('Ludhiana', 'Ludhiana, Punjab, India', 'Ludhiana', 'Punjab', 'DEMO_LUH', 30.901, 75.8573, 19, ['ldh', 'luh']),
+  buildCandidate('Agra', 'Agra, Uttar Pradesh, India', 'Agra', 'Uttar Pradesh', 'DEMO_AGR', 27.1767, 78.0081, 20, ['taj', 'agc', 'agr']),
+  buildCandidate('Nashik', 'Nashik, Maharashtra, India', 'Nashik', 'Maharashtra', 'DEMO_ISK', 19.9975, 73.7898, 21, ['nasik', 'nk', 'isk']),
+  buildCandidate('Varanasi', 'Varanasi, Uttar Pradesh, India', 'Varanasi', 'Uttar Pradesh', 'DEMO_VNS', 25.3176, 82.9739, 22, ['banaras', 'kashi', 'bsb', 'vns']),
+  buildCandidate('Amritsar', 'Amritsar, Punjab, India', 'Amritsar', 'Punjab', 'DEMO_ATQ', 31.634, 74.8723, 23, ['golden temple', 'asr', 'atq']),
+  buildCandidate('Coimbatore', 'Coimbatore, Tamil Nadu, India', 'Coimbatore', 'Tamil Nadu', 'DEMO_CJB', 11.0168, 76.9558, 24, ['kovai', 'cbe', 'cjb']),
+  buildCandidate('Madurai', 'Madurai, Tamil Nadu, India', 'Madurai', 'Tamil Nadu', 'DEMO_IXM', 9.9252, 78.1198, 25, ['mdu', 'ixm']),
+  buildCandidate('Mysuru', 'Mysuru, Karnataka, India', 'Mysuru', 'Karnataka', 'DEMO_MYQ', 12.2958, 76.6394, 26, ['mysore', 'mys', 'myq']),
+  buildCandidate('Mangaluru', 'Mangaluru, Karnataka, India', 'Mangaluru', 'Karnataka', 'DEMO_IXE', 12.9141, 74.856, 27, ['mangalore', 'maq', 'ixe']),
+  buildCandidate('Hubballi', 'Hubballi, Karnataka, India', 'Hubballi', 'Karnataka', 'DEMO_HBX', 15.3647, 75.124, 28, ['hubli', 'dharwad', 'ubl', 'hbx']),
+  buildCandidate('Goa (Panaji)', 'Panaji, Goa, India', 'Goa', 'Goa', 'DEMO_GOI', 15.4909, 73.8278, 29, ['panjim', 'madgaon', 'vasco', 'mopa', 'goi']),
+  buildCandidate('Thiruvananthapuram', 'Thiruvananthapuram, Kerala, India', 'Thiruvananthapuram', 'Kerala', 'DEMO_TRV', 8.5241, 76.9366, 30, ['trivandrum', 'tvc', 'trv']),
+  buildCandidate('Kozhikode', 'Kozhikode, Kerala, India', 'Kozhikode', 'Kerala', 'DEMO_CCJ', 11.2588, 75.7804, 31, ['calicut', 'clt', 'ccj']),
+  buildCandidate('Vijayawada', 'Vijayawada, Andhra Pradesh, India', 'Vijayawada', 'Andhra Pradesh', 'DEMO_VGA', 16.5062, 80.648, 32, ['bza', 'vga']),
+  buildCandidate('Raipur', 'Raipur, Chhattisgarh, India', 'Raipur', 'Chhattisgarh', 'DEMO_RPR', 21.2514, 81.6296, 33, ['rpr']),
+  buildCandidate('Ranchi', 'Ranchi, Jharkhand, India', 'Ranchi', 'Jharkhand', 'DEMO_IXR', 23.3441, 85.3096, 34, ['rnc', 'ixr']),
+  buildCandidate('Bhubaneswar', 'Bhubaneswar, Odisha, India', 'Bhubaneswar', 'Odisha', 'DEMO_BBI', 20.2961, 85.8245, 35, ['bbs', 'bbi']),
+  buildCandidate('Guwahati', 'Guwahati, Assam, India', 'Guwahati', 'Assam', 'DEMO_GAU', 26.1445, 91.7362, 36, ['ghy', 'gau']),
+  buildCandidate('Dehradun', 'Dehradun, Uttarakhand, India', 'Dehradun', 'Uttarakhand', 'DEMO_DED', 30.3165, 78.0322, 37, ['ddn', 'ded']),
+  buildCandidate('Shimla', 'Shimla, Himachal Pradesh, India', 'Shimla', 'Himachal Pradesh', 'DEMO_SLV', 31.1048, 77.1734, 38, ['sml', 'slv']),
+  buildCandidate('Srinagar', 'Srinagar, Jammu and Kashmir, India', 'Srinagar', 'Jammu and Kashmir', 'DEMO_SXR', 34.0837, 74.7973, 39, ['sxr']),
+  buildCandidate('Jodhpur', 'Jodhpur, Rajasthan, India', 'Jodhpur', 'Rajasthan', 'DEMO_JDH', 26.2389, 73.0243, 40, ['ju', 'jdh']),
+  buildCandidate('Udaipur', 'Udaipur, Rajasthan, India', 'Udaipur', 'Rajasthan', 'DEMO_UDR', 24.5854, 73.7125, 41, ['udz', 'udr']),
+  buildCandidate('Noida', 'Noida, Uttar Pradesh, India', 'Noida', 'Uttar Pradesh', 'DEMO_NOI', 28.5355, 77.391, 42, ['greater noida', 'noi']),
+  buildCandidate('Gurugram', 'Gurugram, Haryana, India', 'Gurugram', 'Haryana', 'DEMO_GUR', 28.4595, 77.0266, 43, ['gurgaon', 'gur']),
+  buildCandidate('Kanpur', 'Kanpur, Uttar Pradesh, India', 'Kanpur', 'Uttar Pradesh', 'DEMO_KNU', 26.4499, 80.3319, 44, ['cnb', 'knu'])
+];
+
+function useDemoMaps(): boolean {
+  if (env.DEMO_MODE) {
+    return true;
+  }
+
+  const clientId = (env.MMI_CLIENT_ID || '').toLowerCase();
+  const clientSecret = (env.MMI_CLIENT_SECRET || '').toLowerCase();
+  return !clientId || !clientSecret || clientId.includes('dummy') || clientSecret.includes('dummy');
 }
 
 function safeNumber(value: unknown): number {
@@ -497,32 +347,45 @@ function dedupeCandidates(candidates: CandidateDocument[]): CandidateDocument[] 
 async function loadProviderCandidates(query: string, region: string): Promise<CandidateDocument[]> {
   const normalizedQuery = normalizeText(query);
   const cached = await cacheRedis.get(providerCacheKey(normalizedQuery, region));
-  let payload: Array<Record<string, unknown>>;
+  let payload: Array<Record<string, unknown>> = [];
 
   if (cached) {
-    payload = JSON.parse(cached) as Array<Record<string, unknown>>;
+    try {
+      payload = JSON.parse(cached) as Array<Record<string, unknown>>;
+    } catch {
+      payload = [];
+    }
   } else {
-    const token = await getMMIToken();
-    const res = await axios.get(`${MAPMYINDIA_ATLAS}/api/places/search/json`, {
-      params: {
-        query,
-        region,
-        pod: 'CITY'
-      },
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    try {
+      const token = await getMMIToken();
+      const res = await axios.get(`${MAPMYINDIA_ATLAS}/api/places/search/json`, {
+        params: {
+          query,
+          region,
+          pod: 'CITY'
+        },
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        timeout: 4000
+      });
 
-    payload = res.data?.suggestedLocations || [];
-    await cacheRedis.setex(providerCacheKey(normalizedQuery, region), PROVIDER_CACHE_TTL_SECONDS, JSON.stringify(payload));
+      payload = res.data?.suggestedLocations || [];
+      if (payload.length > 0) {
+        await cacheRedis.setex(providerCacheKey(normalizedQuery, region), PROVIDER_CACHE_TTL_SECONDS, JSON.stringify(payload));
+      }
+    } catch (_err) {
+      payload = [];
+    }
   }
 
-  return dedupeCandidates(
+  const providerCandidates = dedupeCandidates(
     payload
       .filter((entry) => entry.placeName && entry.eLoc)
       .map((entry, index) => parseCandidate(entry, index, 'mapmyindia'))
   );
+
+  return providerCandidates.length > 0 ? providerCandidates : DEMO_CITIES;
 }
 
 async function loadClickSignals(
@@ -688,12 +551,19 @@ export async function geocode(query: string) {
     return result.suggestions[0] || null;
   }
 
-  const res = await axios.get(`${MAPMYINDIA_BASE}/atlas/places`, {
-    params: { query, region: 'IND' },
-    headers: { Authorization: `Bearer ${await getMMIToken()}` }
-  });
+  try {
+    const token = await getMMIToken();
+    const res = await axios.get(`${MAPMYINDIA_BASE}/atlas/places`, {
+      params: { query, region: 'IND' },
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 4000
+    });
 
-  return res.data.suggestedLocations?.[0];
+    return res.data.suggestedLocations?.[0] || null;
+  } catch (_err) {
+    const result = await suggestCities(query, 'IND', { limit: 1 });
+    return result.suggestions[0] || null;
+  }
 }
 
 export async function getRouteDistance(origin: [number, number], dest: [number, number]) {
@@ -755,7 +625,19 @@ export async function suggestCities(query: string, region = 'IND', context: Sear
     return { suggestions: [], meta };
   }
 
-  const candidates = useDemoMaps() ? DEMO_CITIES : await loadProviderCandidates(query, region);
+  let candidates: CandidateDocument[] = [];
+  if (useDemoMaps()) {
+    candidates = DEMO_CITIES;
+  } else {
+    try {
+      candidates = await loadProviderCandidates(query, region);
+      if (!candidates.length) {
+        candidates = DEMO_CITIES;
+      }
+    } catch (_err) {
+      candidates = DEMO_CITIES;
+    }
+  }
   const clickSignals = await loadClickSignals(candidates, normalized, region, context.actor, context.field);
   const queryTokens = tokenizeText(normalized);
 
@@ -855,7 +737,7 @@ export async function getRouteGeometry(params: {
 
   const { originLng, originLat, destLng, destLat } = params;
 
-  if (useDemoMaps()) {
+  const fallbackGeometry = () => {
     const origin: [number, number] = [originLng, originLat];
     const destination: [number, number] = [destLng, destLat];
     const distanceKm = haversineKm(origin, destination);
@@ -875,37 +757,50 @@ export async function getRouteGeometry(params: {
         ]
       }
     };
+  };
+
+  if (useDemoMaps()) {
+    return fallbackGeometry();
   }
 
   const cacheKey = `cache:route:${originLng},${originLat}:${destLng},${destLat}`;
   const cached = await cacheRedis.get(cacheKey);
   if (cached) {
-    return JSON.parse(cached);
+    try {
+      return JSON.parse(cached);
+    } catch {
+      // ignore
+    }
   }
 
-  const token = await getMMIToken();
-  const res = await axios.get(
-    `${MAPMYINDIA_BASE}/advancedmaps/v1/${env.MMI_CLIENT_ID}/route_adv/driving/${originLng},${originLat};${destLng},${destLat}`,
-    {
-      params: {
-        geometries: 'geojson',
-        overview: 'full'
-      },
-      headers: {
-        Authorization: `Bearer ${token}`
+  try {
+    const token = await getMMIToken();
+    const res = await axios.get(
+      `${MAPMYINDIA_BASE}/advancedmaps/v1/${env.MMI_CLIENT_ID}/route_adv/driving/${originLng},${originLat};${destLng},${destLat}`,
+      {
+        params: {
+          geometries: 'geojson',
+          overview: 'full'
+        },
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        timeout: 4000
       }
-    }
-  );
+    );
 
-  const route = res.data?.routes?.[0];
-  const result = {
-    distanceKm: Math.round(((route?.distance || 0) / 1000) * 10) / 10,
-    durationHours: Math.round(((route?.duration || 0) / 3600) * 10) / 10,
-    geometry: route?.geometry || { type: 'LineString', coordinates: [] }
-  };
+    const route = res.data?.routes?.[0];
+    const result = {
+      distanceKm: Math.round(((route?.distance || 0) / 1000) * 10) / 10,
+      durationHours: Math.round(((route?.duration || 0) / 3600) * 10) / 10,
+      geometry: route?.geometry || { type: 'LineString', coordinates: [] }
+    };
 
-  await cacheRedis.setex(cacheKey, 86400, JSON.stringify(result));
-  return result;
+    await cacheRedis.setex(cacheKey, 86400, JSON.stringify(result));
+    return result;
+  } catch (_err) {
+    return fallbackGeometry();
+  }
 }
 
 async function getMMIToken(): Promise<string> {

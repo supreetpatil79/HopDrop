@@ -393,6 +393,8 @@ export function RoutePreviewMap({
                 ═════════════════════════════════════════════════════════════════ */}
             <div className="absolute inset-0 pointer-events-none">
               {/* ── 🚆 TRAIN SCENERY: 3-ASPECT SIGNAL POST & CHAINAGE ── */}
+              {modeData.mode === 'train' && (
+                <>
                   {/* Indian Railways 3-Aspect Track Signal Post */}
                   <div className="hidden sm:flex absolute top-16 left-[28%] flex-col items-center z-10">
                     <div className="flex flex-col items-center rounded-sm bg-zinc-900 px-1 py-1 shadow-sm border border-zinc-700">
@@ -424,10 +426,51 @@ export function RoutePreviewMap({
                   <div className="hidden md:flex absolute bottom-14 right-[35%] items-center gap-1 rounded bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 text-[8px] font-extrabold text-emerald-900 shadow-2xs">
                     ⚡ 25kV AC ELECTRIFIED
                   </div>
+                </>
+              )}
 
-              {/* ── ✈️ FLIGHT SCENERY: ATC TOWER, SURVEILLANCE RADAR, HIGH-ALTITUDE CLOUDS & ATC FREQUENCY ── */}
+              {/* ── ✈️ FLIGHT SCENERY: RUNWAY LIGHTS, ATC TOWER, RADAR, CLOUDS & PAPI ── */}
               {modeData.mode === 'flight' && (
                 <>
+                  {/* Origin Runway 09L Threshold Lighting Bar & Edge Lights */}
+                  <div className="absolute bottom-16 left-12 sm:left-16 flex flex-col items-center z-10 drop-shadow-xs pointer-events-none">
+                    <div className="flex items-center gap-1 rounded-md bg-slate-950/90 border border-emerald-500/50 px-2 py-0.5 shadow-[0_0_12px_rgba(16,185,129,0.3)]">
+                      {/* Green Threshold Lights Array */}
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399] animate-pulse" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_#10b981] animate-ping" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399] animate-pulse" />
+                      <span className="ml-1 text-[7.5px] font-mono font-black text-emerald-300 tracking-wider">RWY 09L</span>
+                    </div>
+                    {/* PAPI 3.0° Glideslope Optical Array */}
+                    <div className="mt-0.5 flex items-center gap-0.5 rounded bg-zinc-900/95 border border-zinc-700 px-1 py-0.2">
+                      <span className="h-1 w-1 rounded-full bg-white shadow-[0_0_4px_#ffffff]" />
+                      <span className="h-1 w-1 rounded-full bg-white shadow-[0_0_4px_#ffffff]" />
+                      <span className="h-1 w-1 rounded-full bg-red-500 shadow-[0_0_4px_#ef4444]" />
+                      <span className="h-1 w-1 rounded-full bg-red-500 shadow-[0_0_4px_#ef4444]" />
+                      <span className="ml-0.5 text-[5.5px] font-mono font-bold text-amber-300">PAPI 3.0°</span>
+                    </div>
+                  </div>
+
+                  {/* Destination Runway 27R ILS Approach Lighting System (ALS) */}
+                  <div className="absolute bottom-16 right-12 sm:right-16 flex flex-col items-center z-10 drop-shadow-xs pointer-events-none">
+                    <div className="flex items-center gap-1 rounded-md bg-slate-950/90 border border-emerald-500/50 px-2 py-0.5 shadow-[0_0_12px_rgba(16,185,129,0.3)]">
+                      <span className="mr-1 text-[7.5px] font-mono font-black text-emerald-300 tracking-wider">RWY 27R</span>
+                      {/* Green Threshold Lights Array */}
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399] animate-pulse" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_#10b981] animate-ping" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399] animate-pulse" />
+                    </div>
+                    {/* ILS CAT-III & ALS Strobe Callout */}
+                    <div className="mt-0.5 flex items-center gap-1 rounded bg-zinc-900/95 border border-sky-600/50 px-1 py-0.2 text-[5.5px] font-mono font-bold text-sky-300">
+                      <span className="h-1 w-1 rounded-full bg-sky-400 animate-ping" />
+                      <span>ALS STROBES ACTIVE • CAT-III ILS</span>
+                    </div>
+                  </div>
+
                   {/* Origin Air Traffic Control (ATC) Tower (Left Runway Approach) */}
                   <div className="absolute top-11 left-[155px] flex flex-col items-center z-10 drop-shadow-xs">
                     {/* Flashing Red Aviation Obstruction Beacon */}
@@ -658,9 +701,77 @@ export function RoutePreviewMap({
                 </g>
               )}
 
-              {/* ── 2. FLIGHT SKYWAY ── */}
+              {/* ── 2. FLIGHT SKYWAY & RUNWAYS WITH ELEVATED LIGHTS ── */}
               {modeData.mode === 'flight' && (
                 <g>
+                  {/* Origin Runway 09L Strip & Lights */}
+                  <g>
+                    {/* Tarmac Slab */}
+                    <rect x="25" y="148" width="70" height="14" rx="2" fill="#1e293b" stroke="#334155" strokeWidth="0.8" />
+                    {/* Threshold Piano Keys */}
+                    <line x1="28" y1="150" x2="28" y2="160" stroke="#ffffff" strokeWidth="1.2" strokeDasharray="1.2 0.8" />
+                    <line x1="31" y1="150" x2="31" y2="160" stroke="#ffffff" strokeWidth="1.2" strokeDasharray="1.2 0.8" />
+                    {/* Runway Number */}
+                    <text x="35" y="157.5" fill="#f8fafc" fontSize="5.5" fontWeight="900" fontFamily="monospace">09L</text>
+                    {/* Centerline Dash */}
+                    <line x1="50" y1="155" x2="90" y2="155" stroke="#ffffff" strokeWidth="1" strokeDasharray="4 3" />
+                    {/* Green Threshold Light Bar */}
+                    <g filter="drop-shadow(0 0 4px #10b981)">
+                      <circle cx="27" cy="148" r="1.3" fill="#10b981" className="animate-pulse" />
+                      <circle cx="27" cy="151.5" r="1.3" fill="#10b981" />
+                      <circle cx="27" cy="155" r="1.5" fill="#34d399" className="animate-ping" />
+                      <circle cx="27" cy="158.5" r="1.3" fill="#10b981" />
+                      <circle cx="27" cy="162" r="1.3" fill="#10b981" className="animate-pulse" />
+                    </g>
+                    {/* Runway Edge Lights (White & Amber) */}
+                    <circle cx="45" cy="147.5" r="1" fill="#fef08a" />
+                    <circle cx="65" cy="147.5" r="1" fill="#ffffff" />
+                    <circle cx="85" cy="147.5" r="1" fill="#f59e0b" />
+                    <circle cx="45" cy="162.5" r="1" fill="#fef08a" />
+                    <circle cx="65" cy="162.5" r="1" fill="#ffffff" />
+                    <circle cx="85" cy="162.5" r="1" fill="#f59e0b" />
+                    {/* PAPI Glideslope Indicator Lights (2 White, 2 Red) */}
+                    <circle cx="42" cy="143" r="0.9" fill="#ffffff" />
+                    <circle cx="45" cy="143" r="0.9" fill="#ffffff" />
+                    <circle cx="48" cy="143" r="0.9" fill="#ef4444" />
+                    <circle cx="51" cy="143" r="0.9" fill="#ef4444" />
+                  </g>
+
+                  {/* Destination Runway 27R Strip & Lights */}
+                  <g>
+                    {/* Tarmac Slab */}
+                    <rect x="505" y="148" width="70" height="14" rx="2" fill="#1e293b" stroke="#334155" strokeWidth="0.8" />
+                    {/* Centerline Dash */}
+                    <line x1="510" y1="155" x2="550" y2="155" stroke="#ffffff" strokeWidth="1" strokeDasharray="4 3" />
+                    {/* Runway Number */}
+                    <text x="554" y="157.5" fill="#f8fafc" fontSize="5.5" fontWeight="900" fontFamily="monospace">27R</text>
+                    {/* Threshold Piano Keys */}
+                    <line x1="568" y1="150" x2="568" y2="160" stroke="#ffffff" strokeWidth="1.2" strokeDasharray="1.2 0.8" />
+                    <line x1="571" y1="150" x2="571" y2="160" stroke="#ffffff" strokeWidth="1.2" strokeDasharray="1.2 0.8" />
+                    {/* Green Threshold Light Bar */}
+                    <g filter="drop-shadow(0 0 4px #10b981)">
+                      <circle cx="573" cy="148" r="1.3" fill="#10b981" className="animate-pulse" />
+                      <circle cx="573" cy="151.5" r="1.3" fill="#10b981" />
+                      <circle cx="573" cy="155" r="1.5" fill="#34d399" className="animate-ping" />
+                      <circle cx="573" cy="158.5" r="1.3" fill="#10b981" />
+                      <circle cx="573" cy="162" r="1.3" fill="#10b981" className="animate-pulse" />
+                    </g>
+                    {/* Runway Edge Lights (White & Amber) */}
+                    <circle cx="515" cy="147.5" r="1" fill="#f59e0b" />
+                    <circle cx="535" cy="147.5" r="1" fill="#ffffff" />
+                    <circle cx="555" cy="147.5" r="1" fill="#fef08a" />
+                    <circle cx="515" cy="162.5" r="1" fill="#f59e0b" />
+                    <circle cx="535" cy="162.5" r="1" fill="#ffffff" />
+                    <circle cx="555" cy="162.5" r="1" fill="#fef08a" />
+                    {/* Approach Lighting System (ALS) Strobe Flashers */}
+                    <g filter="drop-shadow(0 0 4px #ffffff)">
+                      <circle cx="475" cy="155" r="1" fill="#ffffff" className="animate-pulse" />
+                      <circle cx="485" cy="155" r="1.3" fill="#ffffff" className="animate-ping" />
+                      <circle cx="495" cy="155" r="1.1" fill="#38bdf8" />
+                    </g>
+                  </g>
+
+                  {/* Flight Corridor Skyway Arc */}
                   <path d={curveD} fill="none" stroke="#e0f2fe" strokeWidth="10" strokeLinecap="round" />
                   <path d={curveD} fill="none" stroke="url(#flightGradientV3)" strokeWidth="2.5" strokeDasharray="8 10" strokeLinecap="round" />
                 </g>
