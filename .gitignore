@@ -6,9 +6,11 @@ frontend/node_modules/
 # builds
 dist/
 backend/dist/
+backend/dist-prod/
 frontend/dist/
 sender-portal/dist/
 carrier-portal/dist/
+release-production/
 services/*/dist/
 *.tsbuildinfo
 __pycache__/

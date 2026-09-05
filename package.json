@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "build": "npm run build:backend && npm run build:sender && npm run build:carrier && npm run build:services",
+    "bundle:production": "node ./scripts/pack-production.mjs",
     "build:vercel": "node ./scripts/build-vercel.mjs",
     "build:backend": "npm run build --workspace=backend",
     "build:sender": "npm run build --workspace=sender-portal",
@@ -33,6 +34,8 @@
     "services/analytics-pipeline"
   ],
   "devDependencies": {
-    "@playwright/test": "^1.59.1"
+    "@playwright/test": "^1.59.1",
+    "esbuild": "^0.28.2",
+    "terser": "^5.51.2"
   }
 }
