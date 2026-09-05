@@ -76,7 +76,7 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(64).default('hopdrop-dev-jwt-refresh-secret-key-at-least-64-characters-long-for-security-002'),
   JWT_ACCESS_EXPIRY: z.string().default('15m'),
   JWT_REFRESH_EXPIRY: z.string().default('7d'),
-  DEMO_MODE: booleanFromEnv(true),
+  DEMO_MODE: booleanFromEnv(process.env.NODE_ENV !== 'production'),
   MSG91_AUTH_KEY: z.string().optional(),
   MSG91_TEMPLATE_ID: z.string().optional(),
   MMI_CLIENT_ID: z.string().default('dummy-client-id'),

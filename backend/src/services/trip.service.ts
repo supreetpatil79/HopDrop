@@ -12,6 +12,7 @@ import { env } from '../config/env';
 import { matchTripAgainstPendingRequests } from './matching.service';
 import { appendOutboxEvents } from './outbox.service';
 import { confirmTripDeposit, createStandaloneOrder, createTripDepositOrder } from './payment.service';
+import { escapeRegex } from '../utils/sanitize';
 
 const BLOCKING_MATCH_STATUSES = [
   'carrier_accepted',
@@ -101,11 +102,11 @@ export async function listTrips(filters: {
   const query: Record<string, unknown> = { status: 'active' };
 
   if (filters.origin_city) {
-    query['origin.city'] = { $regex: new RegExp(filters.origin_city, 'i') };
+    query['origin.city'] = { $regex: new RegExp(escapeRegex(filters.origin_city), 'i') };
   }
 
   if (filters.destination_city) {
-    query['destination.city'] = { $regex: new RegExp(filters.destination_city, 'i') };
+    query['destination.city'] = { $regex: new RegExp(escapeRegex(filters.destination_city), 'i') };
   }
 
   if (filters.date) {
@@ -197,7 +198,24 @@ export async function updateTrip(userId: string, tripId: string, payload: Record
     throw new ApiError(400, 'Trip cannot be edited once matches are accepted');
   }
 
-  Object.assign(trip, payload);
+  const allowedTripUpdates = [
+    'origin',
+    'destination',
+    'departureTime',
+    'estimatedArrivalTime',
+    'modeOfTransport',
+    'transportDetails',
+    'availableCapacity',
+    'pricePerKg',
+    'pickupInstructions',
+    'dropoffInstructions'
+  ] as const;
+
+  for (const key of allowedTripUpdates) {
+    if (payload[key] !== undefined) {
+      (trip as any)[key] = payload[key];
+    }
+  }
   await trip.save();
 
   await appendOutboxEvents([

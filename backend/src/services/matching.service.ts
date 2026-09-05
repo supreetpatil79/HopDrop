@@ -12,6 +12,7 @@ import { scoreTrip } from '../utils/tripMatcher';
 import { emitToTrip, emitToUser, notifyUser } from './notification.service';
 import { appendOutboxEvents } from './outbox.service';
 import { callRoutingSearch } from './routingSearch.service';
+import { escapeRegex } from '../utils/sanitize';
 
 type TripCandidateRanking = {
   candidate_id: string;
@@ -408,8 +409,8 @@ export async function findMatches(deliveryRequestId: string) {
   }
 
   const trips = await Trip.find({
-    'origin.city': { $regex: new RegExp(req.origin.city, 'i') },
-    'destination.city': { $regex: new RegExp(req.destination.city, 'i') },
+    'origin.city': { $regex: new RegExp(escapeRegex(req.origin.city), 'i') },
+    'destination.city': { $regex: new RegExp(escapeRegex(req.destination.city), 'i') },
     departureTime: {
       $gte: req.preferredDeliveryWindow.earliest,
       $lte: req.preferredDeliveryWindow.latest
@@ -478,8 +479,8 @@ export async function matchTripAgainstPendingRequests(tripId: string) {
   const requests = await DeliveryRequest.find({
     status: 'pending',
     paymentStatus: { $in: ['unpaid', 'paid'] },
-    'origin.city': { $regex: new RegExp(trip.origin.city, 'i') },
-    'destination.city': { $regex: new RegExp(trip.destination.city, 'i') },
+    'origin.city': { $regex: new RegExp(escapeRegex(trip.origin.city), 'i') },
+    'destination.city': { $regex: new RegExp(escapeRegex(trip.destination.city), 'i') },
     'package.weightKg': { $lte: trip.availableCapacity.weightKg },
     'package.category': { $in: trip.availableCapacity.allowedCategories },
     'preferredDeliveryWindow.earliest': { $lte: trip.departureTime },

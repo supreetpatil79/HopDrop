@@ -15,7 +15,13 @@ import { requireAuth } from '../middleware/auth.middleware';
 import { userRateLimiter } from '../middleware/rateLimiter';
 import { validate } from '../middleware/validate';
 import { asyncHandler } from '../utils/asyncHandler';
-import { updateMeSchema, verifyIdSchema } from '../validators/user.validators';
+import {
+  saveCarrierPayoutSchema,
+  saveCarrierPreferencesSchema,
+  updateMeSchema,
+  verifyCarrierAadhaarSchema,
+  verifyIdSchema
+} from '../validators/user.validators';
 
 const router = Router();
 
@@ -29,9 +35,9 @@ router.get('/me/wallet', requireAuth, asyncHandler(walletController));
 
 // ── 🛡️ Carrier Setup & Verification Endpoints ───────────────────────────────
 router.get('/carrier/setup-status', requireAuth, asyncHandler(getCarrierSetupStatusController));
-router.post('/carrier/verify-aadhaar', requireAuth, asyncHandler(verifyCarrierAadhaarController));
-router.post('/carrier/payout-method', requireAuth, asyncHandler(saveCarrierPayoutController));
-router.post('/carrier/preferences', requireAuth, asyncHandler(saveCarrierPreferencesController));
+router.post('/carrier/verify-aadhaar', requireAuth, validate(verifyCarrierAadhaarSchema), asyncHandler(verifyCarrierAadhaarController));
+router.post('/carrier/payout-method', requireAuth, validate(saveCarrierPayoutSchema), asyncHandler(saveCarrierPayoutController));
+router.post('/carrier/preferences', requireAuth, validate(saveCarrierPreferencesSchema), asyncHandler(saveCarrierPreferencesController));
 
 router.get('/:userId/public', requireAuth, asyncHandler(publicProfileController));
 

@@ -192,7 +192,7 @@ export async function registerUser(input: { name: string; email: string; phone: 
 export async function refreshAuthToken(refreshToken: string) {
   let payload: TokenPayload;
   try {
-    payload = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as TokenPayload;
+    payload = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET, { algorithms: ['HS256'] }) as TokenPayload;
   } catch (_error) {
     throw new ApiError(401, 'Invalid refresh token');
   }

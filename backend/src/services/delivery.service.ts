@@ -10,6 +10,7 @@ import { calculateQuote } from '../utils/pricing';
 import { appendOutboxEvents } from './outbox.service';
 import { confirmDeliveryPayment, createDeliveryOrder } from './payment.service';
 import { findMatches } from './matching.service';
+import { escapeRegex } from '../utils/sanitize';
 
 export async function createDeliveryRequest(userId: string, payload: any) {
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -25,8 +26,8 @@ export async function createDeliveryRequest(userId: string, payload: any) {
     await draft.save(session ? { session } : undefined);
 
     const candidateTripQuery = Trip.findOne({
-      'origin.city': { $regex: new RegExp(payload.origin.city, 'i') },
-      'destination.city': { $regex: new RegExp(payload.destination.city, 'i') },
+      'origin.city': { $regex: new RegExp(escapeRegex(payload.origin.city), 'i') },
+      'destination.city': { $regex: new RegExp(escapeRegex(payload.destination.city), 'i') },
       status: 'active',
       safetyDepositPaid: true,
       'availableCapacity.weightKg': { $gte: payload.package.weightKg },
@@ -113,7 +114,19 @@ export async function updateRequest(userId: string, requestId: string, payload: 
     throw new ApiError(400, 'Only pending delivery requests can be updated');
   }
 
-  Object.assign(request, payload);
+  const allowedDeliveryUpdates = [
+    'origin',
+    'destination',
+    'package',
+    'recipient',
+    'preferredDeliveryWindow'
+  ] as const;
+
+  for (const key of allowedDeliveryUpdates) {
+    if (payload[key] !== undefined) {
+      (request as any)[key] = payload[key];
+    }
+  }
   await request.save();
 
   await appendOutboxEvents([

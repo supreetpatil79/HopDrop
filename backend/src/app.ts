@@ -11,6 +11,7 @@ import { errorHandler } from './middleware/errorHandler';
 import { loadShedder } from './middleware/loadShedder';
 import { requireHttps, requestContext } from './middleware/requestContext';
 import { requestLogger } from './middleware/requestLogger';
+import { noSqlSanitizer } from './middleware/sanitize';
 import { metricsRegistry, refreshQueueMetrics } from './observability/metrics';
 import authRoutes from './routes/auth.routes';
 import jobRoutes from './routes/job.routes';
@@ -97,6 +98,7 @@ export function createApp(): Express {
   app.use('/api/v1/payments/razorpay/webhook', express.raw({ type: '*/*' }));
   app.use(express.json({ limit: '10mb' }));
   app.use(cookieParser());
+  app.use(noSqlSanitizer);
 
   app.get('/health', (req, res) => {
     res.status(200).json({ success: true, message: 'ok', requestId: (req as any).requestId });

@@ -11,9 +11,9 @@ import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router();
 
-router.post('/create-order', paymentRateLimiter, asyncHandler(createOrderController));
-router.post('/verify-payment', paymentRateLimiter, asyncHandler(verifyPaymentController));
+router.post('/create-order', requireAuth, paymentRateLimiter, asyncHandler(createOrderController));
+router.post('/verify-payment', requireAuth, paymentRateLimiter, asyncHandler(verifyPaymentController));
 router.post('/razorpay/webhook', webhookRateLimiter, asyncHandler(razorpayWebhookController));
-router.get('/transactions', paymentRateLimiter, requireAuth, asyncHandler(transactionsController));
+router.get('/transactions', requireAuth, paymentRateLimiter, asyncHandler(transactionsController));
 
 export default router;

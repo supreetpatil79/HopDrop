@@ -17,7 +17,7 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as AuthPayload;
+    const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET, { algorithms: ['HS256'] }) as AuthPayload;
     req.user = {
       ...decoded,
       id: decoded.id,

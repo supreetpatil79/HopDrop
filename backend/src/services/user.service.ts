@@ -24,7 +24,18 @@ export async function getMyProfile(userId: string) {
 }
 
 export async function updateMyProfile(userId: string, payload: { name?: string; email?: string; profilePhoto?: string }) {
-  const user = await User.findByIdAndUpdate(userId, payload, { new: true }).select('-refreshTokenHash');
+  const updateData: Record<string, unknown> = {};
+  if (typeof payload?.name === 'string') {
+    updateData.name = payload.name.trim();
+  }
+  if (typeof payload?.email === 'string') {
+    updateData.email = payload.email.trim().toLowerCase();
+  }
+  if (typeof payload?.profilePhoto === 'string') {
+    updateData.profilePhoto = payload.profilePhoto.trim();
+  }
+
+  const user = await User.findByIdAndUpdate(userId, { $set: updateData }, { new: true, runValidators: true }).select('-refreshTokenHash');
   if (!user) {
     throw new ApiError(404, 'User not found');
   }
@@ -162,9 +173,22 @@ export async function saveCarrierPreferences(
     throw new ApiError(404, 'User not found');
   }
 
+  const existing = user.carrierPreferences || {};
   user.carrierPreferences = {
-    ...user.carrierPreferences,
-    ...payload
+    preferredModes: Array.isArray(payload?.preferredModes)
+      ? payload.preferredModes.filter((m: any): m is string => typeof m === 'string')
+      : existing.preferredModes || [],
+    maxCapacityKg: typeof payload?.maxCapacityKg === 'number' && payload.maxCapacityKg > 0
+      ? payload.maxCapacityKg
+      : existing.maxCapacityKg || 10,
+    allowedCategories: Array.isArray(payload?.allowedCategories)
+      ? payload.allowedCategories.filter((c: any): c is string => typeof c === 'string')
+      : existing.allowedCategories || [],
+    instantBooking: typeof payload?.instantBooking === 'boolean'
+      ? payload.instantBooking
+      : (existing.instantBooking ?? false),
+    bio: typeof payload?.bio === 'string' ? payload.bio.slice(0, 500) : existing.bio,
+    emergencyContact: typeof payload?.emergencyContact === 'string' ? payload.emergencyContact.slice(0, 20) : existing.emergencyContact
   };
 
   if (!user.role.includes('carrier')) {

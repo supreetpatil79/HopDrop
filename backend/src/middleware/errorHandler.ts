@@ -7,7 +7,11 @@ import { getMetricsRoute, httpErrorsTotal } from '../observability/metrics';
 export function errorHandler(err: any, req: Request, res: Response, _next: NextFunction): void {
   const isValidationError = err instanceof ZodError;
   const statusCode = err.statusCode || (isValidationError ? 400 : 500);
-  const message = isValidationError ? 'Validation failed' : err.message || 'Internal server error';
+  const message = isValidationError
+    ? 'Validation failed'
+    : (statusCode >= 500 && process.env.NODE_ENV === 'production')
+      ? 'Internal server error'
+      : err.message || 'Internal server error';
   const route = getMetricsRoute(req);
 
   httpErrorsTotal.inc({
