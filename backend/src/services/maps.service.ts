@@ -697,27 +697,36 @@ export async function geocode(query: string) {
 }
 
 export async function getRouteDistance(origin: [number, number], dest: [number, number]) {
-  if (useDemoMaps()) {
+  const fallback = () => {
     const distanceKm = haversineKm(origin, dest);
     const etaMinutes = (distanceKm / 55) * 60;
     return {
       distanceKm: Math.round(distanceKm * 10) / 10,
       etaMinutes: Math.round(etaMinutes)
     };
+  };
+
+  if (useDemoMaps()) {
+    return fallback();
   }
 
-  const key = env.MMI_REST_API_KEY || env.MMI_CLIENT_ID;
-  const res = await axios.get(`${MAPMYINDIA_BASE}/advancedmaps/v1/${key}/route_eta/driving/`, {
-    params: {
-      origin: `${origin[1]},${origin[0]}`,
-      destination: `${dest[1]},${dest[0]}`
-    }
-  });
+  try {
+    const key = env.MMI_REST_API_KEY || env.MMI_CLIENT_ID;
+    const res = await axios.get(`${MAPMYINDIA_BASE}/advancedmaps/v1/${key}/route_eta/driving/`, {
+      params: {
+        origin: `${origin[1]},${origin[0]}`,
+        destination: `${dest[1]},${dest[0]}`
+      },
+      timeout: 5000
+    });
 
-  return {
-    distanceKm: (res.data.routes?.[0]?.distance || 0) / 1000,
-    etaMinutes: (res.data.routes?.[0]?.duration || 0) / 60
-  };
+    return {
+      distanceKm: (res.data.routes?.[0]?.distance || 0) / 1000,
+      etaMinutes: (res.data.routes?.[0]?.duration || 0) / 60
+    };
+  } catch (_error) {
+    return fallback();
+  }
 }
 
 export async function suggestCities(query: string, region = 'IND', context: SearchContext = {}): Promise<SearchSuggestionsResponse> {
