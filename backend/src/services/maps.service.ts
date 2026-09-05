@@ -2,6 +2,8 @@ import axios from 'axios';
 import { env } from '../config/env';
 import { cacheRedis } from '../config/redis';
 import { callRoutingSearch } from './routingSearch.service';
+import { ALL_INDIAN_CITIES } from './indianCities';
+
 
 const MAPMYINDIA_BASE = 'https://apis.mapmyindia.com';
 const MAPMYINDIA_ATLAS = 'https://atlas.mappls.com';
@@ -139,53 +141,19 @@ function buildCandidate(
   };
 }
 
-const DEMO_CITIES: CandidateDocument[] = [
-  buildCandidate('Bengaluru', 'Bengaluru, Karnataka, India', 'Bengaluru', 'Karnataka', 'DEMO_BLR', 12.9716, 77.5946, 0, ['bangalore', 'sbc', 'smvt', 'ypr', 'majestic', 'kempegowda', 'airport', 'blr']),
-  buildCandidate('Mumbai', 'Mumbai, Maharashtra, India', 'Mumbai', 'Maharashtra', 'DEMO_BOM', 19.076, 72.8777, 1, ['bombay', 'csmt', 'cst', 'bct', 'mumbai central', 'bandra', 'ltt', 'dadar', 'thane', 'airport', 'bom']),
-  buildCandidate('Delhi', 'New Delhi, Delhi, India', 'Delhi', 'Delhi', 'DEMO_DEL', 28.6139, 77.209, 2, ['new delhi', 'ndls', 'dli', 'old delhi', 'nzm', 'hazrat nizamuddin', 'anvt', 'anand vihar', 'igi', 'airport', 'del']),
-  buildCandidate('Hyderabad', 'Hyderabad, Telangana, India', 'Hyderabad', 'Telangana', 'DEMO_HYD', 17.385, 78.4867, 3, ['secunderabad', 'sc', 'rgia', 'shamshabad', 'hyd']),
-  buildCandidate('Pune', 'Pune, Maharashtra, India', 'Pune', 'Maharashtra', 'DEMO_PNQ', 18.5204, 73.8567, 4, ['poona', 'shivajinagar', 'pnq']),
-  buildCandidate('Chennai', 'Chennai, Tamil Nadu, India', 'Chennai', 'Tamil Nadu', 'DEMO_MAA', 13.0827, 80.2707, 5, ['madras', 'mas', 'ms', 'central', 'egmore', 'maa']),
-  buildCandidate('Kolkata', 'Kolkata, West Bengal, India', 'Kolkata', 'West Bengal', 'DEMO_CCU', 22.5726, 88.3639, 6, ['calcutta', 'howrah', 'hwh', 'sealdah', 'sda', 'dumdum', 'ccu']),
-  buildCandidate('Ahmedabad', 'Ahmedabad, Gujarat, India', 'Ahmedabad', 'Gujarat', 'DEMO_AMD', 23.0225, 72.5714, 7, ['adi', 'sabarmati', 'gandhinagar', 'amd']),
-  buildCandidate('Jaipur', 'Jaipur, Rajasthan, India', 'Jaipur', 'Rajasthan', 'DEMO_JAI', 26.9124, 75.7873, 8, ['pink city', 'jp', 'jai']),
-  buildCandidate('Kochi', 'Kochi, Kerala, India', 'Kochi', 'Kerala', 'DEMO_COK', 9.9312, 76.2673, 9, ['cochin', 'ernakulam', 'ers', 'cok']),
-  buildCandidate('Chandigarh', 'Chandigarh, Punjab/Haryana, India', 'Chandigarh', 'Chandigarh', 'DEMO_IXC', 30.7333, 76.7794, 10, ['mohali', 'panchkula', 'ixc']),
-  buildCandidate('Lucknow', 'Lucknow, Uttar Pradesh, India', 'Lucknow', 'Uttar Pradesh', 'DEMO_LKO', 26.8467, 80.9462, 11, ['charbagh', 'lko']),
-  buildCandidate('Surat', 'Surat, Gujarat, India', 'Surat', 'Gujarat', 'DEMO_STV', 21.1702, 72.8311, 12, ['stv']),
-  buildCandidate('Indore', 'Indore, Madhya Pradesh, India', 'Indore', 'Madhya Pradesh', 'DEMO_IDR', 22.7196, 75.8577, 13, ['idr']),
-  buildCandidate('Bhopal', 'Bhopal, Madhya Pradesh, India', 'Bhopal', 'Madhya Pradesh', 'DEMO_BHO', 23.2599, 77.4126, 14, ['habibganj', 'rani kamlapati', 'bho']),
-  buildCandidate('Nagpur', 'Nagpur, Maharashtra, India', 'Nagpur', 'Maharashtra', 'DEMO_NAG', 21.1458, 79.0882, 15, ['nag']),
-  buildCandidate('Visakhapatnam', 'Visakhapatnam, Andhra Pradesh, India', 'Visakhapatnam', 'Andhra Pradesh', 'DEMO_VTZ', 17.6868, 83.2185, 16, ['vizag', 'vtz']),
-  buildCandidate('Patna', 'Patna, Bihar, India', 'Patna', 'Bihar', 'DEMO_PAT', 25.5941, 85.1376, 17, ['pnbe', 'pat']),
-  buildCandidate('Vadodara', 'Vadodara, Gujarat, India', 'Vadodara', 'Gujarat', 'DEMO_BDQ', 22.3072, 73.1812, 18, ['baroda', 'brc', 'bdq']),
-  buildCandidate('Ludhiana', 'Ludhiana, Punjab, India', 'Ludhiana', 'Punjab', 'DEMO_LUH', 30.901, 75.8573, 19, ['ldh', 'luh']),
-  buildCandidate('Agra', 'Agra, Uttar Pradesh, India', 'Agra', 'Uttar Pradesh', 'DEMO_AGR', 27.1767, 78.0081, 20, ['taj', 'agc', 'agr']),
-  buildCandidate('Nashik', 'Nashik, Maharashtra, India', 'Nashik', 'Maharashtra', 'DEMO_ISK', 19.9975, 73.7898, 21, ['nasik', 'nk', 'isk']),
-  buildCandidate('Varanasi', 'Varanasi, Uttar Pradesh, India', 'Varanasi', 'Uttar Pradesh', 'DEMO_VNS', 25.3176, 82.9739, 22, ['banaras', 'kashi', 'bsb', 'vns']),
-  buildCandidate('Amritsar', 'Amritsar, Punjab, India', 'Amritsar', 'Punjab', 'DEMO_ATQ', 31.634, 74.8723, 23, ['golden temple', 'asr', 'atq']),
-  buildCandidate('Coimbatore', 'Coimbatore, Tamil Nadu, India', 'Coimbatore', 'Tamil Nadu', 'DEMO_CJB', 11.0168, 76.9558, 24, ['kovai', 'cbe', 'cjb']),
-  buildCandidate('Madurai', 'Madurai, Tamil Nadu, India', 'Madurai', 'Tamil Nadu', 'DEMO_IXM', 9.9252, 78.1198, 25, ['mdu', 'ixm']),
-  buildCandidate('Mysuru', 'Mysuru, Karnataka, India', 'Mysuru', 'Karnataka', 'DEMO_MYQ', 12.2958, 76.6394, 26, ['mysore', 'mys', 'myq']),
-  buildCandidate('Mangaluru', 'Mangaluru, Karnataka, India', 'Mangaluru', 'Karnataka', 'DEMO_IXE', 12.9141, 74.856, 27, ['mangalore', 'maq', 'ixe']),
-  buildCandidate('Hubballi', 'Hubballi, Karnataka, India', 'Hubballi', 'Karnataka', 'DEMO_HBX', 15.3647, 75.124, 28, ['hubli', 'dharwad', 'ubl', 'hbx']),
-  buildCandidate('Goa (Panaji)', 'Panaji, Goa, India', 'Goa', 'Goa', 'DEMO_GOI', 15.4909, 73.8278, 29, ['panjim', 'madgaon', 'vasco', 'mopa', 'goi']),
-  buildCandidate('Thiruvananthapuram', 'Thiruvananthapuram, Kerala, India', 'Thiruvananthapuram', 'Kerala', 'DEMO_TRV', 8.5241, 76.9366, 30, ['trivandrum', 'tvc', 'trv']),
-  buildCandidate('Kozhikode', 'Kozhikode, Kerala, India', 'Kozhikode', 'Kerala', 'DEMO_CCJ', 11.2588, 75.7804, 31, ['calicut', 'clt', 'ccj']),
-  buildCandidate('Vijayawada', 'Vijayawada, Andhra Pradesh, India', 'Vijayawada', 'Andhra Pradesh', 'DEMO_VGA', 16.5062, 80.648, 32, ['bza', 'vga']),
-  buildCandidate('Raipur', 'Raipur, Chhattisgarh, India', 'Raipur', 'Chhattisgarh', 'DEMO_RPR', 21.2514, 81.6296, 33, ['rpr']),
-  buildCandidate('Ranchi', 'Ranchi, Jharkhand, India', 'Ranchi', 'Jharkhand', 'DEMO_IXR', 23.3441, 85.3096, 34, ['rnc', 'ixr']),
-  buildCandidate('Bhubaneswar', 'Bhubaneswar, Odisha, India', 'Bhubaneswar', 'Odisha', 'DEMO_BBI', 20.2961, 85.8245, 35, ['bbs', 'bbi']),
-  buildCandidate('Guwahati', 'Guwahati, Assam, India', 'Guwahati', 'Assam', 'DEMO_GAU', 26.1445, 91.7362, 36, ['ghy', 'gau']),
-  buildCandidate('Dehradun', 'Dehradun, Uttarakhand, India', 'Dehradun', 'Uttarakhand', 'DEMO_DED', 30.3165, 78.0322, 37, ['ddn', 'ded']),
-  buildCandidate('Shimla', 'Shimla, Himachal Pradesh, India', 'Shimla', 'Himachal Pradesh', 'DEMO_SLV', 31.1048, 77.1734, 38, ['sml', 'slv']),
-  buildCandidate('Srinagar', 'Srinagar, Jammu and Kashmir, India', 'Srinagar', 'Jammu and Kashmir', 'DEMO_SXR', 34.0837, 74.7973, 39, ['sxr']),
-  buildCandidate('Jodhpur', 'Jodhpur, Rajasthan, India', 'Jodhpur', 'Rajasthan', 'DEMO_JDH', 26.2389, 73.0243, 40, ['ju', 'jdh']),
-  buildCandidate('Udaipur', 'Udaipur, Rajasthan, India', 'Udaipur', 'Rajasthan', 'DEMO_UDR', 24.5854, 73.7125, 41, ['udz', 'udr']),
-  buildCandidate('Noida', 'Noida, Uttar Pradesh, India', 'Noida', 'Uttar Pradesh', 'DEMO_NOI', 28.5355, 77.391, 42, ['greater noida', 'noi']),
-  buildCandidate('Gurugram', 'Gurugram, Haryana, India', 'Gurugram', 'Haryana', 'DEMO_GUR', 28.4595, 77.0266, 43, ['gurgaon', 'gur']),
-  buildCandidate('Kanpur', 'Kanpur, Uttar Pradesh, India', 'Kanpur', 'Uttar Pradesh', 'DEMO_KNU', 26.4499, 80.3319, 44, ['cnb', 'knu'])
-];
+const DEMO_CITIES: CandidateDocument[] = ALL_INDIAN_CITIES.map((city, index) =>
+  buildCandidate(
+    city.placeName,
+    city.placeAddress,
+    city.city,
+    city.state,
+    city.eLoc,
+    city.latitude,
+    city.longitude,
+    index,
+    city.aliases
+  )
+);
 
 function useDemoMaps(): boolean {
   if (env.DEMO_MODE) {
@@ -664,6 +632,30 @@ export async function suggestCities(query: string, region = 'IND', context: Sear
     })
     .slice(0, limit)
     .map((candidate) => candidate.suggestion);
+
+  if (ranked.length === 0 && normalized.length >= 2) {
+    const formatted = query
+      .trim()
+      .split(' ')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ');
+    ranked.push({
+      placeName: formatted,
+      placeAddress: `${formatted}, India`,
+      city: formatted,
+      state: 'India',
+      eLoc: `LOC_${formatted.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`,
+      latitude: 20.5937,
+      longitude: 78.9629,
+      matchType: 'fuzzy',
+      source: 'fallback',
+      score: 10,
+      queryClicks: 0,
+      contextClicks: 0,
+      globalClicks: 0,
+      popularityHint: null
+    });
+  }
 
   return {
     suggestions: ranked,

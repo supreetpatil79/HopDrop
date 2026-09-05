@@ -1,56 +1,45 @@
 import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent, type ReactNode } from 'react';
 import clsx from 'clsx';
 import { Spinner } from '../ui';
+import { ALL_INDIAN_CITIES, searchIndianCities, type IndianCityData } from './indianCities';
 
 const RECENT_SELECTION_LIMIT = 5;
 
-export const POPULAR_INDIAN_CITIES: MMISuggestion[] = [
-  { placeName: 'Bengaluru', placeAddress: 'Bengaluru, Karnataka, India', city: 'Bengaluru', state: 'Karnataka', eLoc: 'DEMO_BLR', latitude: 12.9716, longitude: 77.5946, matchType: 'exact' },
-  { placeName: 'Mumbai', placeAddress: 'Mumbai, Maharashtra, India', city: 'Mumbai', state: 'Maharashtra', eLoc: 'DEMO_BOM', latitude: 19.076, longitude: 72.8777, matchType: 'exact' },
-  { placeName: 'Delhi', placeAddress: 'New Delhi, Delhi, India', city: 'Delhi', state: 'Delhi', eLoc: 'DEMO_DEL', latitude: 28.6139, longitude: 77.209, matchType: 'exact' },
-  { placeName: 'Hyderabad', placeAddress: 'Hyderabad, Telangana, India', city: 'Hyderabad', state: 'Telangana', eLoc: 'DEMO_HYD', latitude: 17.385, longitude: 78.4867, matchType: 'exact' },
-  { placeName: 'Pune', placeAddress: 'Pune, Maharashtra, India', city: 'Pune', state: 'Maharashtra', eLoc: 'DEMO_PNQ', latitude: 18.5204, longitude: 73.8567, matchType: 'exact' },
-  { placeName: 'Chennai', placeAddress: 'Chennai, Tamil Nadu, India', city: 'Chennai', state: 'Tamil Nadu', eLoc: 'DEMO_MAA', latitude: 13.0827, longitude: 80.2707, matchType: 'exact' },
-  { placeName: 'Kolkata', placeAddress: 'Kolkata, West Bengal, India', city: 'Kolkata', state: 'West Bengal', eLoc: 'DEMO_CCU', latitude: 22.5726, longitude: 88.3639, matchType: 'exact' },
-  { placeName: 'Ahmedabad', placeAddress: 'Ahmedabad, Gujarat, India', city: 'Ahmedabad', state: 'Gujarat', eLoc: 'DEMO_AMD', latitude: 23.0225, longitude: 72.5714, matchType: 'exact' },
-  { placeName: 'Jaipur', placeAddress: 'Jaipur, Rajasthan, India', city: 'Jaipur', state: 'Rajasthan', eLoc: 'DEMO_JAI', latitude: 26.9124, longitude: 75.7873, matchType: 'exact' },
-  { placeName: 'Kochi', placeAddress: 'Kochi, Kerala, India', city: 'Kochi', state: 'Kerala', eLoc: 'DEMO_COK', latitude: 9.9312, longitude: 76.2673, matchType: 'exact' },
-  { placeName: 'Chandigarh', placeAddress: 'Chandigarh, Punjab/Haryana, India', city: 'Chandigarh', state: 'Chandigarh', eLoc: 'DEMO_IXC', latitude: 30.7333, longitude: 76.7794, matchType: 'exact' },
-  { placeName: 'Lucknow', placeAddress: 'Lucknow, Uttar Pradesh, India', city: 'Lucknow', state: 'Uttar Pradesh', eLoc: 'DEMO_LKO', latitude: 26.8467, longitude: 80.9462, matchType: 'exact' },
-  { placeName: 'Surat', placeAddress: 'Surat, Gujarat, India', city: 'Surat', state: 'Gujarat', eLoc: 'DEMO_STV', latitude: 21.1702, longitude: 72.8311, matchType: 'exact' },
-  { placeName: 'Indore', placeAddress: 'Indore, Madhya Pradesh, India', city: 'Indore', state: 'Madhya Pradesh', eLoc: 'DEMO_IDR', latitude: 22.7196, longitude: 75.8577, matchType: 'exact' },
-  { placeName: 'Bhopal', placeAddress: 'Bhopal, Madhya Pradesh, India', city: 'Bhopal', state: 'Madhya Pradesh', eLoc: 'DEMO_BHO', latitude: 23.2599, longitude: 77.4126, matchType: 'exact' },
-  { placeName: 'Nagpur', placeAddress: 'Nagpur, Maharashtra, India', city: 'Nagpur', state: 'Maharashtra', eLoc: 'DEMO_NAG', latitude: 21.1458, longitude: 79.0882, matchType: 'exact' },
-  { placeName: 'Visakhapatnam', placeAddress: 'Visakhapatnam, Andhra Pradesh, India', city: 'Visakhapatnam', state: 'Andhra Pradesh', eLoc: 'DEMO_VTZ', latitude: 17.6868, longitude: 83.2185, matchType: 'exact' },
-  { placeName: 'Patna', placeAddress: 'Patna, Bihar, India', city: 'Patna', state: 'Bihar', eLoc: 'DEMO_PAT', latitude: 25.5941, longitude: 85.1376, matchType: 'exact' },
-  { placeName: 'Vadodara', placeAddress: 'Vadodara, Gujarat, India', city: 'Vadodara', state: 'Gujarat', eLoc: 'DEMO_BDQ', latitude: 22.3072, longitude: 73.1812, matchType: 'exact' },
-  { placeName: 'Ludhiana', placeAddress: 'Ludhiana, Punjab, India', city: 'Ludhiana', state: 'Punjab', eLoc: 'DEMO_LUH', latitude: 30.9010, longitude: 75.8573, matchType: 'exact' },
-  { placeName: 'Agra', placeAddress: 'Agra, Uttar Pradesh, India', city: 'Agra', state: 'Uttar Pradesh', eLoc: 'DEMO_AGR', latitude: 27.1767, longitude: 78.0081, matchType: 'exact' },
-  { placeName: 'Nashik', placeAddress: 'Nashik, Maharashtra, India', city: 'Nashik', state: 'Maharashtra', eLoc: 'DEMO_ISK', latitude: 19.9975, longitude: 73.7898, matchType: 'exact' },
-  { placeName: 'Varanasi', placeAddress: 'Varanasi, Uttar Pradesh, India', city: 'Varanasi', state: 'Uttar Pradesh', eLoc: 'DEMO_VNS', latitude: 25.3176, longitude: 82.9739, matchType: 'exact' },
-  { placeName: 'Amritsar', placeAddress: 'Amritsar, Punjab, India', city: 'Amritsar', state: 'Punjab', eLoc: 'DEMO_ATQ', latitude: 31.6340, longitude: 74.8723, matchType: 'exact' },
-  { placeName: 'Coimbatore', placeAddress: 'Coimbatore, Tamil Nadu, India', city: 'Coimbatore', state: 'Tamil Nadu', eLoc: 'DEMO_CJB', latitude: 11.0168, longitude: 76.9558, matchType: 'exact' },
-  { placeName: 'Madurai', placeAddress: 'Madurai, Tamil Nadu, India', city: 'Madurai', state: 'Tamil Nadu', eLoc: 'DEMO_IXM', latitude: 9.9252, longitude: 78.1198, matchType: 'exact' },
-  { placeName: 'Mysuru', placeAddress: 'Mysuru, Karnataka, India', city: 'Mysuru', state: 'Karnataka', eLoc: 'DEMO_MYQ', latitude: 12.2958, longitude: 76.6394, matchType: 'exact' },
-  { placeName: 'Mangaluru', placeAddress: 'Mangaluru, Karnataka, India', city: 'Mangaluru', state: 'Karnataka', eLoc: 'DEMO_IXE', latitude: 12.9141, longitude: 74.8560, matchType: 'exact' },
-  { placeName: 'Hubballi', placeAddress: 'Hubballi, Karnataka, India', city: 'Hubballi', state: 'Karnataka', eLoc: 'DEMO_HBX', latitude: 15.3647, longitude: 75.1240, matchType: 'exact' },
-  { placeName: 'Goa (Panaji)', placeAddress: 'Panaji, Goa, India', city: 'Goa', state: 'Goa', eLoc: 'DEMO_GOI', latitude: 15.4909, longitude: 73.8278, matchType: 'exact' },
-  { placeName: 'Thiruvananthapuram', placeAddress: 'Thiruvananthapuram, Kerala, India', city: 'Thiruvananthapuram', state: 'Kerala', eLoc: 'DEMO_TRV', latitude: 8.5241, longitude: 76.9366, matchType: 'exact' },
-  { placeName: 'Kozhikode', placeAddress: 'Kozhikode, Kerala, India', city: 'Kozhikode', state: 'Kerala', eLoc: 'DEMO_CCJ', latitude: 11.2588, longitude: 75.7804, matchType: 'exact' },
-  { placeName: 'Vijayawada', placeAddress: 'Vijayawada, Andhra Pradesh, India', city: 'Vijayawada', state: 'Andhra Pradesh', eLoc: 'DEMO_VGA', latitude: 16.5062, longitude: 80.6480, matchType: 'exact' },
-  { placeName: 'Raipur', placeAddress: 'Raipur, Chhattisgarh, India', city: 'Raipur', state: 'Chhattisgarh', eLoc: 'DEMO_RPR', latitude: 21.2514, longitude: 81.6296, matchType: 'exact' },
-  { placeName: 'Ranchi', placeAddress: 'Ranchi, Jharkhand, India', city: 'Ranchi', state: 'Jharkhand', eLoc: 'DEMO_IXR', latitude: 23.3441, longitude: 85.3096, matchType: 'exact' },
-  { placeName: 'Bhubaneswar', placeAddress: 'Bhubaneswar, Odisha, India', city: 'Bhubaneswar', state: 'Odisha', eLoc: 'DEMO_BBI', latitude: 20.2961, longitude: 85.8245, matchType: 'exact' },
-  { placeName: 'Guwahati', placeAddress: 'Guwahati, Assam, India', city: 'Guwahati', state: 'Assam', eLoc: 'DEMO_GAU', latitude: 26.1445, longitude: 91.7362, matchType: 'exact' },
-  { placeName: 'Dehradun', placeAddress: 'Dehradun, Uttarakhand, India', city: 'Dehradun', state: 'Uttarakhand', eLoc: 'DEMO_DED', latitude: 30.3165, longitude: 78.0322, matchType: 'exact' },
-  { placeName: 'Shimla', placeAddress: 'Shimla, Himachal Pradesh, India', city: 'Shimla', state: 'Himachal Pradesh', eLoc: 'DEMO_SLV', latitude: 31.1048, longitude: 77.1734, matchType: 'exact' },
-  { placeName: 'Srinagar', placeAddress: 'Srinagar, Jammu and Kashmir, India', city: 'Srinagar', state: 'Jammu and Kashmir', eLoc: 'DEMO_SXR', latitude: 34.0837, longitude: 74.7973, matchType: 'exact' },
-  { placeName: 'Jodhpur', placeAddress: 'Jodhpur, Rajasthan, India', city: 'Jodhpur', state: 'Rajasthan', eLoc: 'DEMO_JDH', latitude: 26.2389, longitude: 73.0243, matchType: 'exact' },
-  { placeName: 'Udaipur', placeAddress: 'Udaipur, Rajasthan, India', city: 'Udaipur', state: 'Rajasthan', eLoc: 'DEMO_UDR', latitude: 24.5854, longitude: 73.7125, matchType: 'exact' },
-  { placeName: 'Noida', placeAddress: 'Noida, Uttar Pradesh, India', city: 'Noida', state: 'Uttar Pradesh', eLoc: 'DEMO_NOI', latitude: 28.5355, longitude: 77.3910, matchType: 'exact' },
-  { placeName: 'Gurugram', placeAddress: 'Gurugram, Haryana, India', city: 'Gurugram', state: 'Haryana', eLoc: 'DEMO_GUR', latitude: 28.4595, longitude: 77.0266, matchType: 'exact' },
-  { placeName: 'Kanpur', placeAddress: 'Kanpur, Uttar Pradesh, India', city: 'Kanpur', state: 'Uttar Pradesh', eLoc: 'DEMO_KNU', latitude: 26.4499, longitude: 80.3319, matchType: 'exact' }
-];
+export function mapIndianCityToSuggestion(c: IndianCityData): MMISuggestion {
+  return {
+    placeName: c.placeName,
+    placeAddress: c.placeAddress,
+    city: c.city,
+    state: c.state,
+    eLoc: c.eLoc,
+    latitude: c.latitude,
+    longitude: c.longitude,
+    matchType: 'exact',
+    source: 'catalog'
+  };
+}
+
+export function buildCustomCitySuggestion(name: string): MMISuggestion {
+  const formatted = name
+    .trim()
+    .split(' ')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+  return {
+    placeName: formatted,
+    placeAddress: `${formatted}, India`,
+    city: formatted,
+    state: 'India',
+    eLoc: `LOC_${formatted.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`,
+    latitude: 20.5937,
+    longitude: 78.9629,
+    matchType: 'fuzzy',
+    source: 'custom'
+  };
+}
+
+export const POPULAR_INDIAN_CITIES: MMISuggestion[] = ALL_INDIAN_CITIES.map(mapIndianCityToSuggestion);
+
 
 export type SearchActor = 'sender' | 'carrier';
 export type SearchField = 'origin' | 'destination';
@@ -234,12 +223,14 @@ export function RouteAutocomplete({
     if (!q) {
       return POPULAR_INDIAN_CITIES.slice(0, 5);
     }
-    return POPULAR_INDIAN_CITIES.filter(
-      (c) =>
-        c.placeName.toLowerCase().includes(q) ||
-        c.placeAddress.toLowerCase().includes(q) ||
-        c.state?.toLowerCase().includes(q)
-    );
+    const matches = searchIndianCities(q, 15).map(mapIndianCityToSuggestion);
+    if (matches.length > 0) {
+      return matches;
+    }
+    if (q.length >= 2) {
+      return [buildCustomCitySuggestion(query)];
+    }
+    return [];
   }, [query]);
 
   const visibleSuggestions =
@@ -276,13 +267,12 @@ export function RouteAutocomplete({
       if (nextSuggestions && nextSuggestions.length > 0) {
         setSuggestions(nextSuggestions);
       } else {
-        const fallbacks = POPULAR_INDIAN_CITIES.filter(
-          (c) =>
-            c.placeName.toLowerCase().includes(normalizedQuery.toLowerCase()) ||
-            c.placeAddress.toLowerCase().includes(normalizedQuery.toLowerCase()) ||
-            c.state?.toLowerCase().includes(normalizedQuery.toLowerCase())
-        );
-        setSuggestions(fallbacks);
+        const fallbacks = searchIndianCities(normalizedQuery, 15).map(mapIndianCityToSuggestion);
+        if (fallbacks.length > 0) {
+          setSuggestions(fallbacks);
+        } else {
+          setSuggestions([buildCustomCitySuggestion(normalizedQuery)]);
+        }
       }
       setIsOpen(true);
       setActiveIndex(0);
@@ -291,14 +281,13 @@ export function RouteAutocomplete({
         return;
       }
 
-      const fallbacks = POPULAR_INDIAN_CITIES.filter(
-        (c) =>
-          c.placeName.toLowerCase().includes(normalizedQuery.toLowerCase()) ||
-          c.placeAddress.toLowerCase().includes(normalizedQuery.toLowerCase()) ||
-          c.state?.toLowerCase().includes(normalizedQuery.toLowerCase())
-      );
-      setSuggestions(fallbacks);
-      setActiveIndex(fallbacks.length ? 0 : -1);
+      const fallbacks = searchIndianCities(normalizedQuery, 15).map(mapIndianCityToSuggestion);
+      if (fallbacks.length > 0) {
+        setSuggestions(fallbacks);
+      } else {
+        setSuggestions([buildCustomCitySuggestion(normalizedQuery)]);
+      }
+      setActiveIndex(0);
       setIsOpen(true);
       setErrorMessage(null);
     } finally {
