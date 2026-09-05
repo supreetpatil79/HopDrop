@@ -66,12 +66,46 @@ async function createOrder(amount: number, receipt: string, notes: Record<string
   }
 }
 
-export async function createStandaloneOrder(input: { amount: number; receipt: string; notes?: Record<string, string> }) {
-  const order = await createOrder(input.amount, input.receipt, input.notes || {});
+export async function createStandaloneOrder(input: {
+  amount: number;
+  currency?: string;
+  receipt?: string;
+  notes?: Record<string, string>;
+}) {
+  if (!input.amount || typeof input.amount !== 'number' || input.amount < 100) {
+    throw new ApiError(400, 'Invalid amount: minimum amount is 100 paise (₹1)');
+  }
+
+  const receipt = input.receipt || `rcpt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const order = await createOrder(input.amount, receipt, input.notes || {});
   return {
+    order_id: order.id,
     orderId: order.id,
+    id: order.id,
     amount: order.amount,
-    currency: order.currency || 'INR'
+    currency: order.currency || input.currency || 'INR',
+    receipt: order.receipt || receipt
+  };
+}
+
+export async function verifyStandalonePayment(input: {
+  order_id: string;
+  payment_id: string;
+  signature: string;
+}) {
+  if (!input.order_id || !input.payment_id || !input.signature) {
+    throw new ApiError(400, 'Missing required fields: order_id, payment_id, and signature are required');
+  }
+
+  const isValid = verifySignature(input.order_id, input.payment_id, input.signature);
+  if (!isValid) {
+    throw new ApiError(400, 'Invalid payment signature. Verification failed.');
+  }
+
+  return {
+    verified: true,
+    order_id: input.order_id,
+    payment_id: input.payment_id
   };
 }
 

@@ -94,11 +94,11 @@ export function createApp(): Express {
   app.use(cookieParser());
 
   app.get('/health', (req, res) => {
-    res.status(200).json({ success: true, message: 'ok', requestId: req.requestId });
+    res.status(200).json({ success: true, message: 'ok', requestId: (req as any).requestId });
   });
 
   app.get('/api/v1/health', (req, res) => {
-    res.status(200).json({ success: true, message: 'ok', requestId: req.requestId });
+    res.status(200).json({ success: true, message: 'ok', requestId: (req as any).requestId });
   });
 
   app.get('/ready', (req, res) => {
@@ -110,7 +110,7 @@ export function createApp(): Express {
     res.status(ready ? 200 : 503).json({
       success: ready,
       status: ready ? 'ready' : 'degraded',
-      requestId: req.requestId,
+      requestId: (req as any).requestId,
       dependencies: {
         mongo: mongoReady ? 'ready' : 'not_ready',
         redisCache: cacheReady ? 'ready' : 'not_ready',
@@ -141,6 +141,7 @@ export function createApp(): Express {
   app.use('/api/v1/matches', matchRoutes);
   app.use('/api/v1/maps', mapsRoutes);
   app.use('/api/v1/payments', paymentRoutes);
+  app.use('/api', paymentRoutes);
   app.use('/api/v1/pricing', pricingRoutes);
   app.use('/api/v1/webhooks', webhookRoutes);
   app.use('/internal/v1', internalRoutes);
