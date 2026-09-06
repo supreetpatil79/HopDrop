@@ -92,7 +92,9 @@ const envSchema = z.object({
   CLOUDINARY_API_SECRET: z.string().optional(),
   PLATFORM_FEE_PERCENT: z.coerce.number().default(12),
   DEFAULT_SAFETY_DEPOSIT_PAISE: z.coerce.number().default(50000),
-  ESCROW_RELEASE_DELAY_MS: z.coerce.number().default(7200000)
+  ESCROW_RELEASE_DELAY_MS: z.coerce.number().default(7200000),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  ADMIN_PIN: z.string().default('hitchadmin2024')
 });
 
 const parsed = envSchema.safeParse(process.env);

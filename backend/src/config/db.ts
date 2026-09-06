@@ -10,9 +10,18 @@ export async function connectDB(): Promise<void> {
   const maxRetries = isServerless ? 1 : MAX_RETRIES;
   let retries = 0;
 
+  const mongooseOptions = {
+    maxPoolSize: isServerless ? 5 : 10,
+    minPoolSize: isServerless ? 1 : 2,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+    connectTimeoutMS: 10000,
+    heartbeatFrequencyMS: 10000
+  };
+
   while (retries < maxRetries) {
     try {
-      await dbCircuitBreaker.fire(env.MONGODB_URI);
+      await dbCircuitBreaker.fire(env.MONGODB_URI, mongooseOptions);
       logger.info({ attempt: retries + 1 }, 'mongodb_connected');
       return;
     } catch (error) {

@@ -14,6 +14,23 @@ export function initSocket(server: HttpServer): Server {
     }
   });
 
+  // Redis adapter — enables Socket.IO rooms across multiple backend instances
+  // When REDIS_URL is set (i.e. not serverless single-instance), wire up Redis pub/sub
+  if (env.REDIS_URL) {
+    try {
+      // Dynamic import keeps startup clean when @socket.io/redis-adapter isn't installed yet
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { createAdapter } = require('@socket.io/redis-adapter');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { createClient } = require('ioredis');
+      const pubClient = createClient(env.REDIS_URL);
+      const subClient = pubClient.duplicate();
+      io.adapter(createAdapter(pubClient, subClient));
+    } catch {
+      // redis-adapter not installed — single-instance mode, fine for now
+    }
+  }
+
   io.use((socket, next) => {
     try {
       const token = socket.handshake.auth?.token ?? socket.handshake.headers.authorization?.replace('Bearer ', '');

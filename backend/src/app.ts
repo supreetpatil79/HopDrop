@@ -24,6 +24,7 @@ import pricingRoutes from './routes/pricing.routes';
 import userRoutes from './routes/user.routes';
 import webhookRoutes from './routes/webhook.routes';
 import internalRoutes from './routes/internal.routes';
+import analyticsRoutes from './routes/analytics.routes';
 
 function isRedisReady(status: string) {
   return ['ready', 'connect'].includes(status);
@@ -152,6 +153,7 @@ export function createApp(): Express {
   app.use('/api/v1/pricing', pricingRoutes);
   app.use('/api/v1/webhooks', webhookRoutes);
   app.use('/internal/v1', internalRoutes);
+  app.use('/api/v1/analytics', analyticsRoutes);
 
   app.use(errorHandler);
   return app;

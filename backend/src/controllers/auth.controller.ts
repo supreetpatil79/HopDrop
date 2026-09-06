@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { ApiResponse } from '../utils/ApiResponse';
 import { demoLogin, logoutUser, refreshAuthToken, registerUser, sendOtp, verifyOtpLogin } from '../services/auth.service';
+import { googleLogin } from '../services/googleAuth.service';
 
 export async function sendOtpController(req: Request, res: Response) {
   const { phone } = req.body;
@@ -28,6 +29,12 @@ export async function loginController(req: Request, res: Response) {
 export async function demoLoginController(req: Request, res: Response) {
   const result = await demoLogin(req.body.persona ?? req.body.role);
   res.status(200).json(new ApiResponse('Demo login successful', result));
+}
+
+export async function googleLoginController(req: Request, res: Response) {
+  const { idToken } = req.body as { idToken: string };
+  const result = await googleLogin(idToken);
+  res.status(200).json(new ApiResponse('Google login successful', result));
 }
 
 export async function refreshController(req: Request, res: Response) {

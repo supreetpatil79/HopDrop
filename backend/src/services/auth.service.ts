@@ -83,7 +83,7 @@ async function sendSmsOTP(phone: string, otp: string): Promise<void> {
   console.log(`OTP for ${phone}: ${otp}`);
 }
 
-async function issueTokens(userId: Types.ObjectId | string) {
+export async function issueTokens(userId: Types.ObjectId | string) {
   const user = await User.findById(userId);
   if (!user) {
     throw new ApiError(404, 'User not found');

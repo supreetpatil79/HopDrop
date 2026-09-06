@@ -9,8 +9,8 @@ import { logger } from '../observability/logger';
 // Opens after 50% error rate over 3+ calls; recovers after 10s half-open probe.
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function mongoConnect(uri: string): Promise<typeof mongoose> {
-  return mongoose.connect(uri);
+async function mongoConnect(uri: string, options?: mongoose.ConnectOptions): Promise<typeof mongoose> {
+  return mongoose.connect(uri, options ?? {});
 }
 
 export const dbCircuitBreaker = new CircuitBreaker(mongoConnect, {
