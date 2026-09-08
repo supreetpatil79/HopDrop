@@ -14,24 +14,24 @@ The plan is intentionally incremental:
 ## Current State In This Repo
 
 ### Runtime topology
-- Core API: [backend/src/app.ts](/Users/supreetpatil/uber/hopdrop/backend/src/app.ts)
-- Server bootstrap: [backend/src/server.ts](/Users/supreetpatil/uber/hopdrop/backend/src/server.ts)
-- Docker topology: [docker-compose.yml](/Users/supreetpatil/uber/hopdrop/docker-compose.yml)
+- Core API: [backend/src/app.ts](backend/src/app.ts)
+- Server bootstrap: [backend/src/server.ts](backend/src/server.ts)
+- Docker topology: [docker-compose.yml](docker-compose.yml)
 
 ### Existing extraction seam
-- Maps HTTP surface: [backend/src/routes/maps.routes.ts](/Users/supreetpatil/uber/hopdrop/backend/src/routes/maps.routes.ts)
-- Maps provider and caching logic: [backend/src/services/maps.service.ts](/Users/supreetpatil/uber/hopdrop/backend/src/services/maps.service.ts)
-- Matching logic: [backend/src/services/matching.service.ts](/Users/supreetpatil/uber/hopdrop/backend/src/services/matching.service.ts)
-- Delivery creation and queue trigger: [backend/src/services/delivery.service.ts](/Users/supreetpatil/uber/hopdrop/backend/src/services/delivery.service.ts)
+- Maps HTTP surface: [backend/src/routes/maps.routes.ts](backend/src/routes/maps.routes.ts)
+- Maps provider and caching logic: [backend/src/services/maps.service.ts](backend/src/services/maps.service.ts)
+- Matching logic: [backend/src/services/matching.service.ts](backend/src/services/matching.service.ts)
+- Delivery creation and queue trigger: [backend/src/services/delivery.service.ts](backend/src/services/delivery.service.ts)
 
 ### Frontend duplication hotspots
-- Sender UI primitives: [sender-portal/src/components/ui](/Users/supreetpatil/uber/hopdrop/sender-portal/src/components/ui)
-- Carrier UI primitives: [carrier-portal/src/components/ui](/Users/supreetpatil/uber/hopdrop/carrier-portal/src/components/ui)
-- Sender hooks: [sender-portal/src/hooks](/Users/supreetpatil/uber/hopdrop/sender-portal/src/hooks)
-- Carrier hooks: [carrier-portal/src/hooks](/Users/supreetpatil/uber/hopdrop/carrier-portal/src/hooks)
-- Sender APIs: [sender-portal/src/api](/Users/supreetpatil/uber/hopdrop/sender-portal/src/api)
-- Carrier APIs: [carrier-portal/src/api](/Users/supreetpatil/uber/hopdrop/carrier-portal/src/api)
-- Shared package already exists: [shared](/Users/supreetpatil/uber/hopdrop/shared)
+- Sender UI primitives: [sender-portal/src/components/ui](sender-portal/src/components/ui)
+- Carrier UI primitives: [carrier-portal/src/components/ui](carrier-portal/src/components/ui)
+- Sender hooks: [sender-portal/src/hooks](sender-portal/src/hooks)
+- Carrier hooks: [carrier-portal/src/hooks](carrier-portal/src/hooks)
+- Sender APIs: [sender-portal/src/api](sender-portal/src/api)
+- Carrier APIs: [carrier-portal/src/api](carrier-portal/src/api)
+- Shared package already exists: [shared](shared)
 
 ## Target Repo Shape
 ```text
@@ -116,9 +116,9 @@ Rename target:
 
 ### First extraction to `services/routing-search`
 Move or copy logic from these files into the new FastAPI service:
-- [backend/src/routes/maps.routes.ts](/Users/supreetpatil/uber/hopdrop/backend/src/routes/maps.routes.ts)
-- [backend/src/services/maps.service.ts](/Users/supreetpatil/uber/hopdrop/backend/src/services/maps.service.ts)
-- [backend/src/services/matching.service.ts](/Users/supreetpatil/uber/hopdrop/backend/src/services/matching.service.ts)
+- [backend/src/routes/maps.routes.ts](backend/src/routes/maps.routes.ts)
+- [backend/src/services/maps.service.ts](backend/src/services/maps.service.ts)
+- [backend/src/services/matching.service.ts](backend/src/services/matching.service.ts)
 
 Recommended target modules:
 ```text

@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import h3
@@ -14,7 +14,7 @@ H3_RESOLUTIONS = (5, 6, 7)
 
 
 def _indexed_at() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def trip_index_key(trip_id: str) -> str:

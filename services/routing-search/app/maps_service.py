@@ -305,7 +305,7 @@ def _parse_candidate(entry: dict[str, Any], source_order: int, source: str) -> d
         "normalized_search_text": normalized_search_text,
         "name_tokens": _tokenize_text(place_name),
         "city_tokens": _tokenize_text(city),
-        "address_tokens": _tokenize_text(" ".join([place_address, state, locality, sub_locality])),
+        "address_tokens": _tokenize_text(f"{place_address} {state} {locality} {sub_locality}"),
         "search_tokens": _tokenize_text(" ".join(search_parts)),
     }
 

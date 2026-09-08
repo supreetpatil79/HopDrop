@@ -19,8 +19,8 @@ It does not own:
 
 ## Why this service exists
 The current backend still contains maps and matching logic inside the Node service:
-- [backend/src/services/maps.service.ts](/Users/supreetpatil/uber/hopdrop/backend/src/services/maps.service.ts)
-- [backend/src/services/matching.service.ts](/Users/supreetpatil/uber/hopdrop/backend/src/services/matching.service.ts)
+- [backend/src/services/maps.service.ts](backend/src/services/maps.service.ts)
+- [backend/src/services/matching.service.ts](backend/src/services/matching.service.ts)
 
 This service is the dedicated place to move that high-compute, read-heavy logic.
 

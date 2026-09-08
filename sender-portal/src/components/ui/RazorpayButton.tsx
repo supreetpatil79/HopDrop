@@ -105,7 +105,7 @@ export function RazorpayButton({
         }
       }
 
-      const key = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TYDZYXs2HY5trs';
+      const key = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_placeholder';
 
       // Step 2: Open Razorpay Standard Checkout modal
       const options: any = {

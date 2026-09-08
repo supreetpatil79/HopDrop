@@ -40,7 +40,7 @@ const envSchema = z.object({
   MAX_IN_FLIGHT_REQUESTS: z.coerce.number().int().min(100).max(100000).default(1000),
   FRONTEND_URL: z.string().default('http://localhost'),
   INTERNAL_API_TOKEN: z.string().min(16).default('hopdrop-local-internal-token'),
-  MONGODB_URI: z.string().default('mongodb+srv://supreetpatil79_db_user:YOUR_PASSWORD@cluster0.2cntlm0.mongodb.net/hopdrop?appName=Cluster0'),
+  MONGODB_URI: z.string().default('mongodb://127.0.0.1:27017/hopdrop'),
   REDIS_URL: z.string().optional(),
   REDIS_CACHE_URL: z.string().optional(),
   REDIS_QUEUE_URL: z.string().optional(),
@@ -82,19 +82,22 @@ const envSchema = z.object({
   MMI_CLIENT_ID: z.string().default('dummy-client-id'),
   MMI_CLIENT_SECRET: z.string().default('dummy-client-secret'),
   MMI_REST_API_KEY: z.string().default('zpsgumkpgmwsznqbwbisclhjcgiavrtpjobj'),
-  RAZORPAY_KEY_ID: z.string().default('rzp_test_TYDZYXs2HY5trs'),
-  RAZORPAY_KEY_SECRET: z.string().default('1POgAcpP71i2bKiDdMmFEFe7'),
-  RAZORPAY_WEBHOOK_SECRET: z.string().default('dummy-webhook-secret'),
+  RAZORPAY_KEY_ID: z.string().default('rzp_test_placeholder'),
+  RAZORPAY_KEY_SECRET: z.string().default('placeholder_secret'),
+  RAZORPAY_WEBHOOK_SECRET: z.string().default('placeholder_webhook_secret'),
+  ESCROW_AUTO_RELEASE_HOURS: z.coerce.number().default(24),
+  SAFETY_DEPOSIT_MULTIPLIER: z.coerce.number().default(1.5),
+  MIN_SAFETY_DEPOSIT_PAISE: z.coerce.number().default(50000),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  ADMIN_PIN: z.string().default('hitchadmin2024'),
   RAPIDO_API_KEY: z.string().optional(),
-  RAPIDO_ENV: z.string().default('sandbox'),
+  RAPIDO_BASE_URL: z.string().default('https://api.rapido.bike/v1'),
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
   PLATFORM_FEE_PERCENT: z.coerce.number().default(12),
   DEFAULT_SAFETY_DEPOSIT_PAISE: z.coerce.number().default(50000),
-  ESCROW_RELEASE_DELAY_MS: z.coerce.number().default(7200000),
-  GOOGLE_CLIENT_ID: z.string().optional(),
-  ADMIN_PIN: z.string().default('hitchadmin2024')
+  ESCROW_RELEASE_DELAY_MS: z.coerce.number().default(7200000)
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -106,14 +109,14 @@ if (!parsed.success) {
 export const env = parsed.success
   ? parsed.data
   : envSchema.parse({
-      MONGODB_URI: 'mongodb+srv://supreetpatil79_db_user:YOUR_PASSWORD@cluster0.2cntlm0.mongodb.net/hopdrop?appName=Cluster0',
+      MONGODB_URI: 'mongodb://127.0.0.1:27017/hopdrop',
       JWT_ACCESS_SECRET: 'hopdrop-dev-jwt-access-secret-key-at-least-64-characters-long-for-security-001',
       JWT_REFRESH_SECRET: 'hopdrop-dev-jwt-refresh-secret-key-at-least-64-characters-long-for-security-002',
       MMI_CLIENT_ID: 'dummy-client-id',
       MMI_CLIENT_SECRET: 'dummy-client-secret',
-      RAZORPAY_KEY_ID: 'rzp_test_TYDZYXs2HY5trs',
-      RAZORPAY_KEY_SECRET: '1POgAcpP71i2bKiDdMmFEFe7',
-      RAZORPAY_WEBHOOK_SECRET: 'dummy-webhook-secret',
+      RAZORPAY_KEY_ID: 'rzp_test_placeholder',
+      RAZORPAY_KEY_SECRET: 'placeholder_secret',
+      RAZORPAY_WEBHOOK_SECRET: 'placeholder_webhook_secret',
       ...process.env
     });
 

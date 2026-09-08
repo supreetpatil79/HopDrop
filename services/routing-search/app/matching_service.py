@@ -2,7 +2,10 @@ import math
 from difflib import SequenceMatcher
 from typing import Literal
 
-from app.indexing_service import list_candidate_delivery_request_documents, list_candidate_trip_documents
+from app.indexing_service import (
+    list_candidate_delivery_request_documents,
+    list_candidate_trip_documents,
+)
 from app.schemas import (
     CandidateQuote,
     DeliveryRequestCandidate,

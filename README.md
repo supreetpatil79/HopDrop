@@ -1,232 +1,135 @@
-# HopDrop
+# Hitch (HopDrop)
 
-A peer-to-peer package delivery platform that connects people who need to send something with travelers already going that direction. Senders post delivery requests, carriers browsing open trips accept matches, and both sides track the handoff in real time.
+> **Peer-to-peer intercity logistics engine connecting senders with verified travelers heading on existing routes across 170+ Indian cities.**  
+> Same-day delivery powered by spare luggage capacity in passenger vehicles, Vande Bharat rail corridors, and flights.
+
+<div align="center">
+
+| Sender Portal | Carrier Portal |
+|:---:|:---:|
+| <img src="docs/assets/sender-portal-hero.png" width="100%" alt="Hitch Sender Portal" /> | <img src="docs/assets/carrier-portal-hero.png" width="100%" alt="Hitch Carrier Portal" /> |
+| **Instant Same-Day Dispatch**<br>Live corridor matching across 173 cities | **Traveler Monetization**<br>Interactive per-trip capacity earnings calculator |
+
+</div>
+
+<br>
+
+<div align="center">
+  <img src="docs/assets/multimodal-route-radar.png" width="100%" alt="Multimodal Route Corridor Radar" />
+  <p><em>Interactive multimodal corridor radar: real-time transit telemetry, spatial route matching, dual-OTP custody handshake, and zero-hardware tamper-seal protocol.</em></p>
+</div>
 
 ---
 
-## What's in this repo
+### Live Deployments
+
+- 📦 **Sender Portal**: [hop-drop-sender-portal.vercel.app](https://hop-drop-sender-portal.vercel.app)
+- 🚆 **Carrier Portal**: [hop-drop-carrier-portal.vercel.app](https://hop-drop-carrier-portal.vercel.app)
+
+---
+
+## Architecture Overview
 
 ```
 hopdrop/
-├── backend/              Node + Express API — auth, trips, matches, payments
-├── sender-portal/        React app for people sending packages
-├── carrier-portal/       React app for travelers carrying packages
-├── shared/               UI components, maps, and types shared between the portals
+├── backend/              Express 5 TypeScript API (auth, matching, escrow, WebSockets)
+├── sender-portal/        React 18 + Vite sender web app
+├── carrier-portal/       React 18 + Vite traveler/carrier web app
+├── admin-portal/         Internal telemetry and conversion dashboard
+├── shared/               Shared UI primitives, geospatial utils, and TypeScript contracts
 ├── services/
-│   ├── routing-search/   Python + FastAPI — address lookup and trip matching
-│   ├── realtime-gateway/ WebSocket fanout for live tracking
-│   ├── search-indexer/   Keeps the trip index in sync
-│   ├── matching-orchestrator/  Runs match scoring jobs
-│   ├── notification-consumer/ Sends push and in-app notifications
-│   └── analytics-pipeline/   Event aggregation and metrics
-├── e2e/                  Playwright end-to-end tests
-├── docs/                 Architecture decisions and API contracts
-└── docker-compose.yml    Brings the full stack up locally
+│   ├── routing-search/   FastAPI geospatial corridor indexing & route scoring
+│   ├── realtime-gateway/ Socket.IO cluster gateway with Redis adapter
+│   ├── matching-orchestrator/ Background match scoring worker
+│   ├── search-indexer/   Trip & corridor index sync worker
+│   ├── notification-consumer/ Push notification event consumer
+│   └── analytics-pipeline/   Telemetry aggregation pipeline
+├── e2e/                  Playwright end-to-end test suite
+├── infra/                Helm charts & Nginx ingress configurations
+└── docker-compose.yml    Local multi-service orchestration
 ```
 
 ---
 
-## Tech stack
+## Core Engineering Highlights
 
-| Layer | What we use |
-|---|---|
-| Backend API | Node.js, Express 5, TypeScript, Mongoose |
-| Portals | React 18, Vite, TypeScript, Zustand |
-| Routing search | Python 3.11, FastAPI |
-| Database | MongoDB 7 (replica set) |
-| Queue | Redis + BullMQ |
-| Event bus | Kafka (Redpanda) |
-| Realtime | Socket.IO |
-| Observability | Prometheus, Grafana, OpenTelemetry, Sentry |
-| Auth | JWT + bcrypt |
-| Maps | MapMyIndia SDK |
-| Testing | Jest, Playwright |
+- **Spatial Corridor Matching**: Geospatial indexing matching delivery pickup/drop coordinates against active traveler transit corridors with time-window overlap and capacity constraints.
+- **Concurrency & Double-Booking Guard**: Atomic distributed locking in Redis (`SET resource_key token NX PX 5000`) combined with MongoDB multi-document ACID transactions (`session.withTransaction`) to guarantee luggage capacity cannot be over-subscribed.
+- **Dual-OTP Verification & Escrow**: Sender provides Pickup OTP; recipient provides Delivery OTP. Funds remain locked in multi-party platform escrow until physical handoff is cryptographically validated.
+- **Tamper-Evident Physical Protocol**: Computer vision verification bound to RBI currency note serial numbers taped across package seams.
+- **Horizontal Realtime Scaling**: Socket.IO room fanout backed by `@socket.io/redis-adapter` for multi-instance WebSocket synchronization.
+- **Fault-Tolerant Payments**: Razorpay checkout integration protected by Opossum circuit breakers and idempotent webhook deduplication.
 
 ---
 
-## Running locally
+## Tech Stack
 
-You need Docker Desktop and Node 20.
+| Layer | Technologies |
+|---|---|
+| **Core API** | Node.js 20, Express 5, TypeScript, Mongoose 8, Zod |
+| **Microservices** | Python 3.11, FastAPI, BullMQ, Redis 7, Kafka |
+| **Frontends** | React 18, Vite 6, TypeScript, Tailwind CSS, Framer Motion |
+| **Datastores** | MongoDB 7 (Replica Set), Redis 7 (Cache & Queue) |
+| **Telemetry** | Prometheus, Grafana, OpenTelemetry, Pino JSON logging |
+| **Verification** | Jest, Supertest, Playwright, Vitest |
 
-**1. Copy the env file and fill in your keys:**
+---
+
+## Local Development
+
+### Prerequisites
+- Node.js >= 20.0.0
+- Docker Desktop
+- Python >= 3.10 (for `services/routing-search`)
+
+### 1. Environment Configuration
 ```bash
 cp .env.example .env
 ```
+Update necessary vendor credentials (`RAZORPAY_*`, `MMI_*`) if testing real provider handshakes. Default values are pre-wired for local containers.
 
-The local defaults are wired for Docker. For a real environment, rotate the JWT secrets and set the MapMyIndia, Razorpay, and `BULL_BOARD_PASSWORD` values before exposing the stack.
-
-The production Compose profile fails closed unless `DEMO_MODE=false`,
-`INTERNAL_API_TOKEN`, and `BULL_BOARD_PASSWORD` are explicitly supplied. Do not
-reuse the local `.env.example` values for a public deployment.
-
-**2. Start everything:**
+### 2. Start Infrastructure
 ```bash
 docker compose up -d --build --wait
 ```
 
-That brings up the full stack and waits for the service healthchecks to go green. First boot takes a couple of minutes while images build.
+### 3. Service Endpoints
 
-**3. Open the apps:**
-
-| App | URL |
+| Service | Address |
 |---|---|
-| Sender Portal | http://localhost:3001 |
-| Carrier Portal | http://localhost:3002 |
-| Unified Nginx entrypoint | http://localhost |
-| Backend API | http://localhost:5001 |
-| Queue dashboard | http://localhost/admin/queues |
-| Grafana | http://localhost:3003 |
-| Prometheus | http://localhost:9090 |
+| Sender Portal | `http://localhost:3001` |
+| Carrier Portal | `http://localhost:3000` |
+| Admin Analytics Portal | `http://localhost:3003` |
+| Core API Gateway | `http://localhost:5001` |
+| BullMQ Queue UI | `http://localhost/admin/queues` |
+| Prometheus | `http://localhost:9090` |
+| Grafana | `http://localhost:3003` |
 
-**4. Seed some test data:**
+### 4. Seed Development Data
 ```bash
 npm run seed:docker
 ```
 
-**5. Run the platform smoke check:**
-```bash
-npm run verify:platform
-```
-
 ---
 
-## Running the backend tests
+## Verification & Testing
 
 ```bash
-npm run test:backend
-```
-
-## Running all app tests
-
-```bash
+# Run unit & integration tests across workspaces
 npm test
-```
 
-That runs:
+# Run backend test suite with in-memory Mongo
+npm run test:backend
 
-- backend Jest suites
-- sender portal Vitest suite
-- carrier portal Vitest suite
-
-## Repo hygiene
-
-```bash
-npm run verify:repo
-```
-
-That check fails if generated artifacts like `dist/`, `__pycache__/`, or `.pyc` files are tracked in git.
-
----
-
-## Running the e2e tests
-
-You need the Docker stack running first, then:
-
-```bash
-npm run verify:platform
+# Run Playwright end-to-end user journeys
 npm run test:e2e
+
+# Run platform connectivity smoke test
+npm run verify:platform
 ```
-
-3 Playwright flows: sender posts a request, carrier accepts a match, sender confirms the handoff.
-
----
-
-## How the match flow works
-
-1. Sender creates a delivery request with pickup and drop-off locations.
-2. The routing-search service finds carrier trips whose route overlaps the delivery corridor.
-3. The backend creates match candidates and notifies the carrier.
-4. Carrier reviews the request and accepts.
-5. Sender confirms the carrier.
-6. Both sides get live location updates through the realtime gateway until handoff.
-
----
-
-## Environment variables
-
-See `.env.example` for the full list with descriptions. For any real deployment, these are the required ones:
-
-```
-MONGODB_URI=
-REDIS_CACHE_URL=
-REDIS_QUEUE_URL=
-JWT_ACCESS_SECRET=
-JWT_REFRESH_SECRET=
-INTERNAL_API_TOKEN=
-MMI_CLIENT_ID=
-MMI_CLIENT_SECRET=
-RAZORPAY_KEY_ID=
-RAZORPAY_KEY_SECRET=
-RAZORPAY_WEBHOOK_SECRET=
-BULL_BOARD_PASSWORD=
-```
-
-`REDIS_URL` still exists as a local and backward-compatible fallback, but the platform standard is to set `REDIS_CACHE_URL` and `REDIS_QUEUE_URL` separately so readiness, traffic isolation, and future scaling stay explicit.
-
-The telemetry vars (`SENTRY_DSN`, `OTEL_*`, `VITE_POSTHOG_*`, etc.) can stay blank in dev. `MSG91_*`, `RAPIDO_*`, and `CLOUDINARY_*` are conditional and only required when those integrations are enabled in a real environment.
-
-## Backend runtime standard
-
-The backend now follows the common Express composition-root pattern, which is the industry-standard way to keep startup logic testable and predictable:
-
-- `createApp()` is required. It builds middleware and routes only, and does not bind a network port.
-- `createHttpServer(app)` is required when the process needs to accept traffic. Keeping it separate lets tests reuse the Express app without opening sockets.
-- `createServerRuntime({ ... })` is required for real process startup. It owns dependency boot order, readiness gating, and graceful shutdown.
-- Queue workers also follow factory methods now (`createMatchWorker()`, `createOtpCleanupWorker()`, and friends), so Redis-backed workers start only inside runtime startup instead of during module import.
-- `registerOpenTelemetry()` and `initServerTelemetry()` are optional runtime integrations. They are env-gated and stay off unless observability is configured.
-
----
-
-## What's been done recently
-
-- Match read endpoints now have their own rate limit bucket, separate from write actions, so carrier match fetching doesn't starve sender tracking updates.
-- The sender tracking screen and carrier active delivery screen both fail gracefully with a retry button if the fetch is slow or errors out, instead of sitting on a loading spinner forever.
-- The Playwright handoff spec now waits for the real interactive state before continuing, so it doesn't flake on slower builds.
-- The Dockerized portals now serve production Vite builds through Nginx instead of Vite dev servers, with immutable asset caching and SPA fallback.
-- The backend now exposes a protected BullMQ queue dashboard at `/admin/queues`, starts all queue workers, and shuts HTTP, workers, Redis, MongoDB, outbox, and telemetry down cleanly on signals.
-- Pricing now separates carrier payout from sender platform fees, adds package risk/urgency/reliability premiums, and exposes carrier lane guidance at `/api/v1/pricing/carrier-guidance`.
-- The carrier portal has an earnings workspace with pending payouts, released payouts, escrow, best routes, and per-job payout visibility.
-- The core API now uses explicit runtime factory methods for app and server composition, and `/ready` verifies MongoDB plus both Redis roles instead of only one shared Redis status.
-- All sidecar service images now have first-class healthchecks and run under a non-root Node user, so `docker compose up --wait` reflects actual platform readiness.
-- There is now a repo-level platform smoke check that validates nginx, both portals, and every service readiness endpoint in one command.
-
----
-
-## Roadmap
-
-The `docs/architecture/` folder has the full migration plan. Short version:
-
-- **Phase 1** — finish extracting routing-search from the Node backend
-- **Phase 2** — BM25 + geospatial corridor indexing for faster matching
-- **Phase 3** — Kafka outbox so delivery creation doesn't block on side effects
-- **Phase 4** — scale the realtime gateway independently with Redis pub/sub
-- **Phase 5** — clean up frontend package duplication into shared packages
-- **Phase 6** — Kubernetes + Helm, canary deploys, KEDA autoscaling on Kafka lag
-
-The initial cloud-neutral Helm baseline is available at
-`infra/helm/hopdrop-platform`. It deploys stateless application services with
-private ClusterIP networking, TLS ingress hooks, health probes, resource
-limits, HPA, PDB, and a default-deny network policy. Stateful data services and
-secret management remain external by design.
 
 ---
 
 ## Author
 
-Supreet Patil — [github.com/supreetpatil79](https://github.com/supreetpatil79)
-
-## CI
-
-GitHub Actions now enforces:
-
-- tracked-artifact hygiene
-- workspace builds
-- backend and portal tests
-- backend and portal dependency audits
-- routing-search pytest
-- Dockerized platform smoke checks
-
-## Ops Docs
-
-- [Production readiness checklist](docs/runbooks/production-readiness-checklist.md)
-- [Incident response runbook](docs/runbooks/incident-response.md)
+Supreet Patil ([@supreetpatil79](https://github.com/supreetpatil79))

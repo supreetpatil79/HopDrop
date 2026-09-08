@@ -8,9 +8,11 @@ from app.indexing_service import (
 )
 from app.maps_service import (
     record_search_selection,
-    resolve_address as resolve_address_payload,
     route_geometry,
     suggest_cities,
+)
+from app.maps_service import (
+    resolve_address as resolve_address_payload,
 )
 from app.matching_service import match_candidates as match_candidates_payload
 from app.metrics import metrics_content_type, metrics_payload

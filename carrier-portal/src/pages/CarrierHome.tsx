@@ -1,509 +1,261 @@
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
-import { ArrowRightLeft, CircleDollarSign, Route, ShieldCheck, TrendingUp, Zap } from 'lucide-react';
-import { EmptyState, LoadingState, PageHeader, StatCard } from 'hopdrop-shared';
-import { MATCH_ACTIVE_STATUSES, MATCH_COMPLETED_STATUSES, formatWorkflowStatus } from 'hopdrop-shared';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowRight, CircleDollarSign, MapPin, Package, ShieldCheck, Truck, Zap } from 'lucide-react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { tripApi } from '../api/trip.api';
 import { fetchCarrierMatches } from '../utils/matches';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
 import { formatINRPaise } from '../utils/format';
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const CARRIER_QUOTES = [
-  {
-    text: '"I carry 2 parcels every weekend to Hyderabad. It completely covers my Vande Bharat ticket and I earn ₹600 extra on top."',
-    name: 'Karthik R.',
-    route: 'BLR → HYD'
-  },
-  {
-    text: '"I was already flying to Mumbai. 3 envelopes later, my flight was free. Takes 10 minutes total."',
-    name: 'Anjali M.',
-    route: 'BLR → MUM'
-  },
-  {
-    text: '"First time I carried a parcel I thought it would be complicated. It was just a photo, a seal, and a 6-digit code. Nothing else."',
-    name: 'Rohan D.',
-    route: 'DEL → JAI'
-  }
-];
+// ─── Data ────────────────────────────────────────────────────────────────────
 
 const PAYOUT_TIERS = [
-  { parcel: '1st parcel', payout: '₹350', note: 'Base handover', color: 'bg-emerald-500' },
-  { parcel: '2nd parcel', payout: '₹200', note: 'Incremental effort', color: 'bg-emerald-400' },
-  { parcel: '3rd parcel', payout: '₹150', note: 'Near-zero effort', color: 'bg-emerald-300' },
-  { parcel: '4th+ each', payout: '₹100', note: 'Passive income', color: 'bg-emerald-200' }
+  { label: '1st parcel', payout: '₹350', sub: 'Base handover bonus' },
+  { label: '2nd parcel', payout: '₹200', sub: 'Incremental effort' },
+  { label: '3rd parcel', payout: '₹150', sub: 'Near-zero effort' },
+  { label: '4th+ each', payout: '₹100', sub: 'Passive per parcel' },
 ];
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 18 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }
-  }
-};
-
-const stagger = {
-  show: { transition: { staggerChildren: 0.08 } }
-};
-
-// ---------------------------------------------------------------------------
-// Main Component
-// ---------------------------------------------------------------------------
-
-const DEMO_CARRIER_TRIPS = [
-  {
-    _id: 'trip_demo_blr_hyd',
-    origin: { city: 'Bengaluru', placeId: 'place_blr' },
-    destination: { city: 'Hyderabad', placeId: 'place_hyd' },
-    departureTime: new Date(Date.now() + 1000 * 60 * 60 * 4).toISOString(),
-    status: 'active',
-    modeOfTransport: 'train',
-    availableCapacity: { weightKg: 8 },
-    pricePerKg: 120,
-    matches: ['match_demo_101']
-  },
-  {
-    _id: 'trip_demo_blr_bom',
-    origin: { city: 'Bengaluru', placeId: 'place_blr' },
-    destination: { city: 'Mumbai', placeId: 'place_bom' },
-    departureTime: new Date(Date.now() + 1000 * 60 * 60 * 28).toISOString(),
-    status: 'active',
-    modeOfTransport: 'flight',
-    availableCapacity: { weightKg: 15 },
-    pricePerKg: 200,
-    matches: []
-  }
+const HOW_IT_WORKS = [
+  { icon: MapPin, step: '01', title: 'Post your trip', desc: 'Enter your route, date, and how much bag space you have. Takes 90 seconds.' },
+  { icon: Package, step: '02', title: 'Accept a request', desc: "We surface matched parcels on your exact corridor. Accept what suits you." },
+  { icon: ShieldCheck, step: '03', title: 'OTP pickup handoff', desc: 'Meet the sender, verify the 6-digit OTP, scan the ₹10 seal. Parcel is yours.' },
+  { icon: CircleDollarSign, step: '04', title: 'Get paid at delivery', desc: 'Recipient confirms with Delivery OTP. Escrow releases your payout instantly.' },
 ];
 
-const DEMO_CARRIER_MATCHES = [
-  {
-    _id: 'match_demo_101',
-    status: 'carrier_accepted',
-    financials: { payoutToCarrier: 145000, escrowAmount: 185000 },
-    payoutToCarrier: 145000,
-    deliveryRequest: {
-      package: { description: 'MacBook Pro & Charger (Fragile)', weightKg: 2.5, category: 'electronics' },
-      origin: { city: 'Bengaluru' },
-      destination: { city: 'Hyderabad' },
-      recipient: { name: 'Kavita Reddy', phone: '+919876543210' }
-    },
-    trip: {
-      origin: { city: 'Bengaluru' },
-      destination: { city: 'Hyderabad' },
-      departureTime: new Date(Date.now() + 1000 * 60 * 60 * 4).toISOString(),
-      modeOfTransport: 'train'
-    }
-  }
+const CARRIER_QUOTES = [
+  { quote: 'I carry 2 parcels every weekend to Hyderabad. It covers my Vande Bharat ticket and I earn ₹600 extra.', name: 'Karthik R.', route: 'BLR → HYD', initials: 'KR' },
+  { quote: 'I was already flying to Mumbai. 3 envelopes later, my flight was free. Takes 10 minutes total.', name: 'Anjali M.', route: 'BLR → MUM', initials: 'AM' },
+  { quote: 'Photo, seal, 6-digit code. Nothing else. First time I did it I thought it would be complicated.', name: 'Rohan D.', route: 'DEL → JAI', initials: 'RD' },
 ];
 
-export default function CarrierHome() {
-  const tripsQuery = useQuery({
-    queryKey: ['carrier-home-trips'],
-    queryFn: () => tripApi.getMyTrips().then((res) => res.data.data),
-    retry: 1
-  });
-  const matchesQuery = useQuery({
-    queryKey: ['carrier-home-matches'],
-    queryFn: fetchCarrierMatches,
-    retry: 1
-  });
+const TICKER = [
+  'BLR → HYD · ₹680 earned', 'DEL → MUM · ₹420 earned',
+  'PNQ → BLR · ₹530 earned', 'CHN → BLR · ₹350 earned',
+  'HYD → DEL · ₹780 earned',
+];
 
-  const trips = (tripsQuery.data && tripsQuery.data.length > 0) ? tripsQuery.data : DEMO_CARRIER_TRIPS;
-  const matches = (matchesQuery.data && matchesQuery.data.length > 0) ? matchesQuery.data : DEMO_CARRIER_MATCHES;
-  const proposedMatches = matches.filter((match: any) => match.status === 'proposed');
-  const activeMatches = matches.filter((match: any) => MATCH_ACTIVE_STATUSES.includes(match.status));
-  const completedMatches = matches.filter((match: any) => MATCH_COMPLETED_STATUSES.includes(match.status));
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
-  const pendingPayout = [...proposedMatches, ...activeMatches].reduce(
-    (sum: number, match: any) => sum + (match.financials?.payoutToCarrier ?? match.payoutToCarrier ?? 0),
-    0
-  );
-  const deliveredPayout = completedMatches.reduce(
-    (sum: number, match: any) => sum + (match.financials?.payoutToCarrier ?? match.payoutToCarrier ?? 0),
-    0
-  );
-  const totalEarned = deliveredPayout + pendingPayout;
-  const ticketCoveragePercent = Math.min(Math.round((totalEarned / 150000) * 100), 100);
-
-  const nextTrip = [...trips]
-    .filter((trip: any) => trip.status === 'active')
-    .sort((a: any, b: any) => new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime())[0];
+function EarningsCard() {
+  const [kg, setKg] = useState(5);
+  const est = kg <= 2 ? 350 : kg <= 5 ? 550 : kg <= 10 ? 750 : 950;
 
   return (
-    <motion.div
-      className="space-y-8"
-      variants={stagger}
-      initial="hidden"
-      animate="show"
-    >
-      {/* ── HEADER ── */}
-      <motion.div variants={fadeUp}>
-        <PageHeader
-          eyebrow="Carrier Console"
-          title="Carrier Dashboard"
-          description="Active routes, incoming sender requests, OTP checkpoints, and instant escrow settlements."
-          actions={
-            <div className="flex flex-wrap items-center gap-2">
-              <a href="/send-package">
-                <Button variant="ghost" size="sm">
-                  Switch to Sender
-                </Button>
-              </a>
-              <Link to="/post-trip">
-                <Button variant="primary" size="sm">
-                  Post Travel Route
-                </Button>
-              </Link>
-            </div>
-          }
-        />
-      </motion.div>
-
-      {/* ── ONBOARDING & VERIFICATION BANNER ── */}
-      <motion.div variants={fadeUp}>
-        <div className="flex flex-col gap-4 rounded-3xl border border-zinc-200/90 bg-gradient-to-r from-zinc-950 via-zinc-900 to-slate-950 p-5 text-white shadow-md sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3.5">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400">
-              <ShieldCheck className="h-6 w-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-black text-white">Carrier Onboarding & DigiLocker Verification</h3>
-                <span className="rounded bg-emerald-950 border border-emerald-500/30 px-1.5 py-0.5 text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
-                  KYC Portal
-                </span>
-              </div>
-              <p className="text-xs text-zinc-400">
-                Link Aadhaar via DigiLocker, configure Instant UPI Payouts, and set travel capacity preferences.
-              </p>
-            </div>
+    <div className="rounded-2xl border border-warm-200 bg-white p-6 shadow-card">
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-warm-400 mb-4">Earnings estimator</p>
+      <div className="space-y-4">
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-warm-700">Spare capacity</span>
+            <span className="font-mono text-sm font-bold text-warm-900">{kg} kg</span>
           </div>
-          <Link to="/setup">
-            <Button size="sm" className="whitespace-nowrap bg-emerald-500 text-zinc-950 hover:bg-emerald-400 font-bold">
-              Complete Verification & Setup →
-            </Button>
-          </Link>
+          <input
+            type="range" min={1} max={20} step={1} value={kg}
+            onChange={(e) => setKg(Number(e.target.value))}
+            className="w-full accent-[#2563EB]"
+          />
         </div>
-      </motion.div>
-
-      {/* ── STAT CARDS ── */}
-      <motion.div
-        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
-        variants={stagger}
-      >
-        {[
-          {
-            label: 'Active Routes',
-            value: `${trips.length}`,
-            description: 'Corridors currently posted.',
-            icon: <Route className="h-4 w-4" />
-          },
-          {
-            label: 'Awaiting Review',
-            value: `${proposedMatches.length}`,
-            description: 'New incoming matches.',
-            icon: <ArrowRightLeft className="h-4 w-4" />
-          },
-          {
-            label: 'In Delivery',
-            value: `${activeMatches.length}`,
-            description: 'OTP / in-transit state.',
-            icon: <ShieldCheck className="h-4 w-4" />
-          },
-          {
-            label: 'Pending Payout',
-            value: formatINRPaise(pendingPayout),
-            description: `${formatINRPaise(deliveredPayout)} delivered.`,
-            icon: <CircleDollarSign className="h-4 w-4" />
-          }
-        ].map((stat, i) => (
-          <motion.div
-            key={stat.label}
-            variants={fadeUp}
-            transition={{ delay: i * 0.07 }}
-          >
-            <StatCard
-              label={stat.label}
-              value={stat.value}
-              description={stat.description}
-              icon={stat.icon}
-            />
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {/* ── EARNINGS MOTIVATOR ── */}
-      <motion.div variants={fadeUp}>
-        <Card variant="dark" className="p-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-emerald-400" />
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                  Ticket Coverage Tracker
-                </span>
-              </div>
-              <h2 className="text-lg font-bold text-white">
-                {ticketCoveragePercent >= 100
-                  ? '🎉 Your round-trip is fully covered!'
-                  : `You're ${ticketCoveragePercent}% toward covering your round-trip ticket.`}
-              </h2>
-              <p className="text-sm text-zinc-400">
-                Carry 3–5 parcels on your next trip to reach ₹1,500 — the average Vande Bharat round-trip fare.
-              </p>
-            </div>
-            <Link to="/post-trip">
-              <Button variant="subtle" size="sm">
-                <Zap className="h-3.5 w-3.5" />
-                Post a Trip
-              </Button>
-            </Link>
-          </div>
-
-          {/* Progress bar */}
-          <div className="mt-4 space-y-1.5">
-            <div className="flex justify-between text-[11px] font-medium text-zinc-400">
-              <span>₹0</span>
-              <span className="font-mono">{ticketCoveragePercent}% of ₹1,500 target</span>
-              <span>₹1,500</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-zinc-800">
-              <motion.div
-                initial={{ width: '5%' }}
-                animate={{ width: `${Math.max(ticketCoveragePercent, 5)}%` }}
-                transition={{ duration: 1.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-                className="h-full rounded-full bg-emerald-500"
-              />
-            </div>
-          </div>
-        </Card>
-      </motion.div>
-
-      {/* ── MAIN CONTENT GRID ── */}
-      <motion.div variants={fadeUp} className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
-        {/* Actionable Requests */}
-        <Card className="space-y-4 p-5" padding="none">
-          <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-            <div>
-              <h2 className="text-base font-bold text-zinc-950">Actionable Requests</h2>
-              <p className="text-xs text-zinc-500">Accept requests, generate handover OTPs, or track settlement.</p>
-            </div>
-            <Link to="/incoming-requests">
-              <Button variant="ghost" size="sm" className="text-xs">View All</Button>
-            </Link>
-          </div>
-
-          {matches.length ? (
-            <div className="space-y-3">
-              {[...proposedMatches, ...activeMatches].slice(0, 4).map((match, i) => (
-                <motion.div
-                  key={match._id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.06 }}
-                  className="rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 space-y-3 transition-all duration-200 hover:border-zinc-300 hover:bg-white hover:shadow-sm"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-bold text-zinc-950">
-                        {match.deliveryRequest?.origin?.city} → {match.deliveryRequest?.destination?.city}
-                      </p>
-                      <p className="text-xs text-zinc-500 mt-0.5">
-                        {match.deliveryRequest?.package?.description || 'Package parcel'} · {match.deliveryRequest?.package?.weightKg || '-'} kg
-                      </p>
-                    </div>
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-700">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                      {formatWorkflowStatus(match.status)}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-zinc-200/60 pt-2.5 text-xs text-zinc-500">
-                    <span>
-                      Sender: <strong className="text-zinc-800 font-semibold">{match.sender?.name || 'Verified Sender'}</strong>
-                    </span>
-                    <span className="font-bold text-zinc-950 tabular-nums">
-                      Payout: {formatINRPaise(match.financials?.payoutToCarrier ?? match.payoutToCarrier)}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    <Link to={`/active-delivery/${match._id}`}>
-                      <Button size="sm" className="text-xs">
-                        {match.status === 'proposed' ? 'Accept / Review' : 'Open Delivery Flow'}
-                      </Button>
-                    </Link>
-                    <a href={`/track-delivery/${match._id}`}>
-                      <Button variant="ghost" size="sm" className="text-xs">
-                        View Sender Radar
-                      </Button>
-                    </a>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <EmptyState
-              title="No active matches yet"
-              description="Post a travel route to start receiving matched packages on your route."
-            />
-          )}
-        </Card>
-
-        {/* Right column */}
-        <div className="space-y-4">
-          {/* Next Departure */}
-          <Card className="space-y-3 p-5" padding="none">
-            <h2 className="text-base font-bold text-zinc-950">Next Departure</h2>
-            {nextTrip ? (
-              <div className="rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-3.5 space-y-1.5">
-                <p className="text-sm font-bold text-zinc-950">
-                  {nextTrip.origin?.city} → {nextTrip.destination?.city}
-                </p>
-                <p className="text-xs text-zinc-500">
-                  {new Date(nextTrip.departureTime).toLocaleString('en-IN', {
-                    dateStyle: 'medium',
-                    timeStyle: 'short'
-                  })}
-                </p>
-                <p className="text-xs text-zinc-700 font-medium">
-                  {nextTrip.modeOfTransport} · ₹{nextTrip.pricePerKg}/kg · {nextTrip.availableCapacity?.weightKg} kg remaining
-                </p>
-              </div>
-            ) : (
-              <EmptyState
-                title="No departure scheduled"
-                description="Post your upcoming route to match with nearby package senders."
-              />
-            )}
-          </Card>
-
-          {/* Quick Workflow */}
-          <Card className="space-y-3 p-5" padding="none">
-            <h2 className="text-base font-bold text-zinc-950">Quick Workflow</h2>
-            <p className="text-xs leading-relaxed text-zinc-500">
-              When matched, generate a 6-digit Pickup OTP for the sender. Upon dropoff, generate the Delivery OTP to auto-release your escrow payout.
-            </p>
-            <div className="flex flex-wrap gap-2 pt-1">
-              <Link to="/incoming-requests">
-                <Button size="sm" className="text-xs">Incoming Requests</Button>
-              </Link>
-              <Link to="/my-trips">
-                <Button variant="ghost" size="sm" className="text-xs">Manage Trips</Button>
-              </Link>
-            </div>
-          </Card>
-        </div>
-      </motion.div>
-
-      {/* ── PAYOUT EXPLAINER ── */}
-      <motion.div variants={fadeUp}>
-        <Card className="p-6 space-y-5" interactive>
+        <div className="rounded-xl bg-[#EFF6FF] border border-blue-100 p-4 flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-              How your payout works
-            </span>
-            <h2 className="mt-1 text-base font-bold text-zinc-950">
-              Batching more parcels = higher platform margin you keep
-            </h2>
-            <p className="mt-1 text-xs text-zinc-500">
-              Your travel cost is fixed. Every additional parcel you carry is near-zero incremental effort.
+            <p className="text-xs text-blue-600 font-medium">You could earn</p>
+            <p className="text-2xl font-bold text-[#2563EB] font-display mt-0.5">₹{est}</p>
+          </div>
+          <span className="text-xs text-blue-500">per trip</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QuoteCarousel() {
+  const [idx, setIdx] = useState(0);
+  const q = CARRIER_QUOTES[idx];
+  return (
+    <div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={idx}
+          initial={{ opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -16 }}
+          transition={{ duration: 0.3 }}
+          className="rounded-2xl border border-warm-200 bg-white p-6 shadow-card"
+        >
+          <div className="mb-3 text-2xl text-[#2563EB] font-display leading-none">"</div>
+          <p className="text-sm font-medium text-warm-800 leading-relaxed mb-4">{q.quote}</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-full bg-[#2563EB] flex items-center justify-center text-[11px] font-bold text-white">{q.initials}</div>
+              <p className="text-xs font-semibold text-warm-900">{q.name}</p>
+            </div>
+            <span className="text-[11px] font-mono font-semibold text-warm-400 border border-warm-200 rounded-full px-2.5 py-0.5">{q.route}</span>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+      <div className="mt-3 flex justify-center gap-1.5">
+        {CARRIER_QUOTES.map((_, i) => (
+          <button key={i} onClick={() => setIdx(i)} className={`h-1.5 rounded-full transition-all ${i === idx ? 'w-5 bg-[#2563EB]' : 'w-1.5 bg-warm-300'}`} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+
+const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.1 } } };
+const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } } };
+
+export default function CarrierHome() {
+  const doubled = [...TICKER, ...TICKER];
+
+  return (
+    <motion.div variants={stagger} initial="hidden" animate="show" className="flex flex-col gap-16 pb-24">
+
+      {/* ── HERO ── */}
+      <motion.section variants={fadeUp} className="pt-6 lg:pt-12">
+        <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+          {/* Left */}
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/60 bg-blue-50 px-3.5 py-1.5 text-[12px] font-semibold text-blue-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#2563EB] animate-pulse" />
+              Earn on every intercity trip you take
+            </div>
+
+            <h1 className="text-4xl font-bold tracking-tight text-warm-950 sm:text-5xl lg:text-[52px] lg:leading-[1.1]">
+              Your trip already pays.{' '}
+              <span className="font-display italic text-[#2563EB]">Make it earn.</span>
+            </h1>
+
+            <p className="text-base text-warm-500 leading-relaxed max-w-md">
+              Accept parcels on your existing route. Zero detours. Zero overhead. Every handoff is OTP-secured and every payout is escrow-guaranteed.
             </p>
-          </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {PAYOUT_TIERS.map((tier, i) => (
-              <motion.div
-                key={tier.parcel}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.07 }}
-                className="rounded-xl border border-zinc-200/80 bg-zinc-50/60 p-4"
-              >
-                <div className={`h-1.5 w-8 rounded-full mb-3 ${tier.color}`} />
-                <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">{tier.parcel}</p>
-                <p className="text-xl font-bold tabular-nums text-zinc-950 mt-1">{tier.payout}</p>
-                <p className="text-[11px] text-zinc-400 mt-0.5">{tier.note}</p>
-              </motion.div>
-            ))}
-          </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link to="/post-trip">
+                <button type="button" className="flex items-center gap-2 rounded-xl bg-[#2563EB] px-6 py-3 text-sm font-semibold text-white shadow-[0_4px_16px_rgba(37,99,235,0.35)] transition-all hover:bg-[#1D4ED8] hover:shadow-[0_6px_20px_rgba(37,99,235,0.40)] active:scale-[0.98]">
+                  Post your trip <ArrowRight className="h-4 w-4" />
+                </button>
+              </Link>
+              <Link to="/incoming-requests">
+                <button type="button" className="flex items-center gap-2 rounded-xl border border-warm-200 bg-white px-6 py-3 text-sm font-medium text-warm-700 shadow-card transition hover:border-warm-300 hover:text-warm-900">
+                  Browse requests
+                </button>
+              </Link>
+            </div>
 
-          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3.5">
-            <p className="text-xs font-semibold text-zinc-700">
-              💡 Example: Carry 5 parcels on one BLR → HYD trip = ₹900 payout.
-              That's your entire Vande Bharat round-trip ticket paid for — plus ₹600 in your pocket.
-            </p>
-          </div>
-        </Card>
-      </motion.div>
-
-      {/* ── CARRIER QUOTE ── */}
-      <motion.div variants={fadeUp}>
-        <Card className="p-6" accent="emerald" interactive>
-          <p className="text-sm font-medium italic leading-relaxed text-zinc-700">
-            {CARRIER_QUOTES[0].text}
-          </p>
-          <div className="mt-4 flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-950 text-[10px] font-bold text-white">
-              {CARRIER_QUOTES[0].name[0]}
-            </span>
-            <div>
-              <p className="text-xs font-bold text-zinc-900">{CARRIER_QUOTES[0].name}</p>
-              <p className="text-[11px] text-zinc-500">{CARRIER_QUOTES[0].route} · Verified Carrier</p>
+            <div className="flex items-center gap-4 pt-2">
+              <div className="flex -space-x-2">
+                {['KR', 'AM', 'RD', 'VK'].map((initials) => (
+                  <div key={initials} className="h-7 w-7 rounded-full border-2 border-white bg-[#2563EB]/15 flex items-center justify-center text-[9px] font-bold text-[#2563EB]">{initials}</div>
+                ))}
+              </div>
+              <p className="text-xs text-warm-500"><span className="font-semibold text-warm-900">1,800+</span> active carriers across India</p>
             </div>
           </div>
-        </Card>
-      </motion.div>
 
-      {/* ── ACTIVE TRAVEL CORRIDORS ── */}
-      <motion.div variants={fadeUp}>
-        <Card className="space-y-4 p-5" padding="none">
-          <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-            <h2 className="text-base font-bold text-zinc-950">Active Travel Corridors</h2>
-            <Link to="/my-trips">
-              <Button variant="ghost" size="sm" className="text-xs">Manage Trips</Button>
-            </Link>
-          </div>
-          {trips.length ? (
-            <div className="space-y-2">
-              {trips.map((trip: any, i: number) => (
+          {/* Right — earnings estimator + payout tiers */}
+          <div className="space-y-4">
+            <EarningsCard />
+            <div className="grid grid-cols-2 gap-3">
+              {PAYOUT_TIERS.map((tier, i) => (
                 <motion.div
-                  key={trip._id}
-                  initial={{ opacity: 0, y: 6 }}
+                  key={tier.label}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="flex items-center justify-between rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-3.5 transition-all duration-200 hover:border-zinc-300 hover:bg-white hover:shadow-sm"
+                  transition={{ delay: i * 0.07 }}
+                  className="rounded-xl border border-warm-200 bg-white p-4 shadow-card"
                 >
-                  <div>
-                    <p className="text-sm font-bold text-zinc-950">
-                      {trip.origin?.city} → {trip.destination?.city}
-                    </p>
-                    <p className="text-xs text-zinc-500 mt-0.5">
-                      {new Date(trip.departureTime).toLocaleString('en-IN')}
-                    </p>
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    {trip.status}
-                  </span>
+                  <p className="font-display text-xl font-bold text-[#2563EB]">{tier.payout}</p>
+                  <p className="text-[11px] font-semibold text-warm-800 mt-0.5">{tier.label}</p>
+                  <p className="text-[10px] text-warm-500 mt-0.5">{tier.sub}</p>
                 </motion.div>
               ))}
             </div>
-          ) : (
-            <EmptyState
-              title="No trips posted yet"
-              description="Post a trip to begin receiving route-matched package opportunities."
-            />
-          )}
-        </Card>
-      </motion.div>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* ── TICKER ── */}
+      <motion.section variants={fadeUp}>
+        <div className="rounded-2xl border border-warm-200 bg-white overflow-hidden shadow-card">
+          <div className="flex items-center justify-between border-b border-warm-100 px-5 py-3">
+            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-warm-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#2563EB] animate-pulse" />
+              Live carrier earnings feed
+            </div>
+            <Link to="/my-trips" className="text-[11px] font-semibold text-[#2563EB] hover:underline">My trips →</Link>
+          </div>
+          <div className="ticker-wrap py-3.5 px-5">
+            <div className="ticker-inner gap-8">
+              {doubled.map((item, i) => (
+                <span key={i} className="mr-8 text-sm font-medium text-warm-600">
+                  <span className="text-warm-300 mr-1">·</span> {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* ── HOW IT WORKS ── */}
+      <motion.section variants={fadeUp}>
+        <div className="mb-8 text-center">
+          <span className="eyebrow-brand">How it works</span>
+          <h2 className="mt-3 text-3xl font-bold tracking-tight text-warm-950">
+            Earn in 4 steps. <span className="font-display italic text-[#2563EB]">Simple.</span>
+          </h2>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {HOW_IT_WORKS.map((s, i) => (
+            <motion.div
+              key={s.step}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.08 }}
+              className="group rounded-2xl border border-warm-200 bg-white p-6 shadow-card transition-all hover:border-[#2563EB]/30 hover:shadow-[0_8px_24px_-8px_rgba(37,99,235,0.12)]"
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 transition group-hover:bg-[#2563EB]">
+                  <s.icon className="h-4.5 w-4.5 text-[#2563EB] transition group-hover:text-white" />
+                </div>
+                <span className="font-mono text-[11px] font-bold text-warm-300">{s.step}</span>
+              </div>
+              <h3 className="text-sm font-bold text-warm-900 mb-1.5">{s.title}</h3>
+              <p className="text-xs text-warm-500 leading-relaxed">{s.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </motion.section>
+
+      {/* ── TESTIMONIALS ── */}
+      <motion.section variants={fadeUp}>
+        <div className="mb-6">
+          <span className="eyebrow">Real carriers</span>
+          <h2 className="mt-3 text-2xl font-bold tracking-tight text-warm-950">
+            Carriers earning across <span className="font-display italic text-[#2563EB]">India.</span>
+          </h2>
+        </div>
+        <QuoteCarousel />
+      </motion.section>
+
+      {/* ── CTA BANNER ── */}
+      <motion.section variants={fadeUp}>
+        <div className="relative overflow-hidden rounded-3xl bg-[#2563EB] p-10 text-center">
+          <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
+          <div className="relative z-10 space-y-5">
+            <h2 className="text-3xl font-bold text-white tracking-tight">Your next trip is already half-paid.</h2>
+            <p className="text-sm text-white/70 max-w-md mx-auto">Post your route, accept a parcel, and get paid at delivery. No extra work — you're already going there.</p>
+            <Link to="/post-trip">
+              <button type="button" className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3.5 text-sm font-bold text-[#2563EB] shadow-[0_4px_20px_rgba(0,0,0,0.12)] transition hover:shadow-[0_8px_28px_rgba(0,0,0,0.16)] active:scale-[0.98]">
+                Post your trip <ArrowRight className="h-4 w-4" />
+              </button>
+            </Link>
+          </div>
+        </div>
+      </motion.section>
     </motion.div>
   );
 }

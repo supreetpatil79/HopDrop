@@ -379,8 +379,8 @@ Use short retention here compared with lifecycle topics.
 
 ## Delivery Creation Flow
 Current state in this repo:
-- [backend/src/controllers/delivery.controller.ts](/Users/supreetpatil/uber/hopdrop/backend/src/controllers/delivery.controller.ts)
-- [backend/src/services/delivery.service.ts](/Users/supreetpatil/uber/hopdrop/backend/src/services/delivery.service.ts)
+- [backend/src/controllers/delivery.controller.ts](backend/src/controllers/delivery.controller.ts)
+- [backend/src/services/delivery.service.ts](backend/src/services/delivery.service.ts)
 
 Target flow:
 1. `core-api` writes `DeliveryRequest`.

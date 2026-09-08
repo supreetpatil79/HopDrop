@@ -169,7 +169,7 @@ jobs:
           load: true
 
       - name: Scan image and fail on high/critical findings
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           image-ref: hopdrop/${{ matrix.name }}:${{ github.sha }}
           format: table
